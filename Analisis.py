@@ -92,7 +92,7 @@ for i in range(len(Us)):
         
     Bi = np.append(Bi, B1[i])#np.mean((B1[i],B2[i])))
     Bf = np.append(Bf, np.mean((B3[i],B4[i])))
-    #no entiendo por que las confianzas estas appendean el promedio entre todas las confianzas
+    #NO ENTIENDO POR QUE LAS CONFIANZAS ESTAS APPENDEAN EL PROMEDIO ENTRE TODAS LAS CONFIANZAS
     ConfA = np.append(ConfA,np.mean((ConfA1[i], ConfA2[i],ConfA3[i],ConfA4[i])))
     ConfB = np.append(ConfB,np.mean((ConfB1[i],ConfB2[i],ConfB3[i],ConfB4[i])))
     
@@ -129,17 +129,20 @@ for i in A:
     if N[i,6] != N[i,9]:
         #guardamos un 1 en M
         M = np.append(M, 1)
-        #si 
+        #si ESTA CONDICION NO LA ENTIENDO
         if (N[i,8]-50)*(N[i,9]-50) < 0 and N[i,8] != -1:
+            #guardamos un 1 en D
             D = np.append(D,1)
+        #si ESTA CONDICION NO LA ENTIENDO
         else:
+            #guardamos un 0 en D
             D = np.append(D,0)
     #si no intentamos manipular a la persona
     #es decir que le presentamos en una repregunta
     #el mismo valor al que contesto al principio
     else:
         M = np.append(M,0)    
-
+#ESTO NO SE QUE ES
 DR = np.sum(D)/np.sum(M)
 #%%
 Tfin = np.zeros(10)
