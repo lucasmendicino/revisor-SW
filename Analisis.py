@@ -105,6 +105,9 @@ for i in range(len(Us)):
         TNMi = np.append(TNMi,Ai[i])
         TNMf = np.append(TNMf,Af[i])   
 
+#Cada componente de M es una repregunta distinta y para cada repregunta pongo un 0 si estuvo manipulada y un 1 si no
+#Cada componente de D es una repregunta distinta y para cada repregunta pongo un 0 si la detecté y un 1 si no
+
 M = np.array([])
 D = np.array([])
 """
