@@ -82,7 +82,6 @@ TNMf = np.array([])
 ConfA = np.array([])
 ConfB = np.array([])
 
-
 for i in range(len(Us)):
 #    if F[i] == 11 or F[i] == 12:
 #        B2[i] = -B2[i] + 100
@@ -106,10 +105,6 @@ for i in range(len(Us)):
         Tf = np.append(Tf,Bf[i])
         TNMi = np.append(TNMi,Ai[i])
         TNMf = np.append(TNMf,Af[i])   
-
-
-        
-
 
 M = np.array([])
 D = np.array([])
@@ -142,16 +137,31 @@ for i in A:
     #el mismo valor al que contesto al principio
     else:
         M = np.append(M,0)    
-#ESTO NO SE QUE ES
+#ESTO NO SE QUE ES Y NO SE USA
 DR = np.sum(D)/np.sum(M)
-#%%
+
+#%%------------------------------------%%#
+"""
+Ti y Tf guarda el promedio de las respuestas Ai y Bi cuando se intenta manipular
+las respuestas a Ai(Fork 9 y 11) o Bi(Fork 10 y 12) respectivamente.
+TNMi y TNMf guardan el promedio de las respuestas Ai y Bi cuando NO se intenta manipular
+las respuestas a Ai(Fork 10 y 12) o Bi(Fork 9 y 11) respectivamente.
+"""
+"""
+Ti guarda el promdio de las respuestas iniciales Ai cuando el Fork es 9 y 11
+y Bi cuando el Fork es 10 y 12
+TNMi guarda el promedio de las respuestas inciales Ai cuando el Fork
+es 10 y 12 y guarda el promedio de las respuestas iniciales
+"""
+
 Tfin = np.zeros(10)
-k = np.zeros(10)
+k = np.zeros(10) # esto es para normalizar
 
 TNMfin = np.zeros(10)
-kNM = np.zeros(10)
+kNM = np.zeros(10) # esto es para normalizar
 
 for i in range(len(Ti)):
+    
     Tfin[int(Ti[i]/11)] = Tfin[int(Ti[i]/11)] + Tf[i]
     k[int(Ti[i]/11)] = k[int(Ti[i]/11)] + 1       
     
@@ -165,11 +175,12 @@ plt.figure()
 plt.xlabel('Opening questions agreement')
 plt.ylabel('Final questions agreement')
 plt.title('All topics')
+#pregunta: estan al reves los labels aca?
 plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Tfin, label = 'Non manipulated')
 plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],TNMfin, label = 'Manipulated')
 plt.legend()
 plt.savefig('Totals',dpi=200)
-#%%
+#%%------------------------------------%%#
 Afin = np.zeros(10)
 k = np.zeros(10)
 
@@ -196,7 +207,7 @@ plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-
 plt.legend()
 plt.savefig('An',dpi=200)
     
-#%%
+#%%------------------------------------%%#
     
 Bfin = np.zeros(10)
 k = np.zeros(10)
@@ -224,7 +235,7 @@ plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-
 plt.legend()
 plt.savefig('Bn',dpi=200)
 
-#%%
+#%%------------------------------------%%#
 Adif = np.zeros(10)
 k = np.zeros(10)
 
@@ -250,7 +261,7 @@ plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-
 plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],ANMdif, label = 'Manipulated')
 plt.legend()
 plt.savefig('AConfn',dpi=200)
-#%%
+#%%------------------------------------%%#
 Bdif = np.zeros(10)
 k = np.zeros(10)
 
