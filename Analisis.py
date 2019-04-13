@@ -120,21 +120,29 @@ A = np.where(N[:,7]==1)[0].astype(int) #Tomo los indices de las repreguntas
 
 #miramos solamente las filas que sean repregunta
 for i in A:
-    #si intentamos manipular a la persona
+    #si manipulamos a la persona
     #es decir que le presentamos en una repregunta
-    #un valor distinto al que contesto al principio
+    #un valor (N[i,9]) distinto al que contesto al principio (N[i,6])
     if N[i,6] != N[i,9]:
         #guardamos un 1 en M
         M = np.append(M, 1)
-        #si ESTA CONDICION NO LA ENTIENDO
-        #miro el valor presentado y le resto 50
-        #y el valor respondido y le resto 50
-        #si estan del mismo lado del 50 Y
-        #fue detectada la manipulacion, es decir, N[i,8] != -1
+        #la columna 8 contiene -1 si la persona en una repregunta no cambia el valor presentado
+        #y tiene el valor de respuesta si decide modificar el valor presentado en la repregunta
+        
+        #si N[i,8] y N[i,9] estan de distinto lado del 50 es porque la persona nota algo extraño
+        #y cambia el valor propuesto pero sin embargo mantiene una postura contraria a la de
+        #la primera vez
+        
+        #si N[i,8] != -1 es porque decidio cambiar lo que se le presento
+        
+        #es decir que si se cumplen estas dos consideramos que detecto el engaño
         if (N[i,8]-50)*(N[i,9]-50) < 0 and N[i,8] != -1:
             #guardamos un 1 en D
             D = np.append(D,1)
-        #si ...
+        #si N[i,8] y N[i,9] estan del mismo lado del 50 es porque la persona no nota el engaño
+        #y no devuelve el cursor al "lado correcto" de la escala del 1 al 100
+        
+        #si N[i,8] == -1 es porque no detecto el engaño
         else:
             #guardamos un 0 en D
             D = np.append(D,0)
@@ -143,8 +151,8 @@ for i in A:
     #el mismo valor al que contesto al principio
     else:
         M = np.append(M,0)    
-#ESTO NO SE QUE ES Y NO SE USA
-DR = np.sum(D)/np.sum(M)
+
+DR = np.sum(D)/np.sum(M) #Detection rate
 
 #%%------------------------------------%%#
 """
