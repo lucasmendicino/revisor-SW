@@ -78,7 +78,6 @@ Ti = np.array([])
 Tf = np.array([])
 TNMi = np.array([])
 TNMf = np.array([])
-#no entiendo por que las confianzas estas appendean el promedio entre todas las confianzas
 ConfA = np.array([])
 ConfB = np.array([])
 
@@ -91,7 +90,7 @@ for i in range(len(Us)):
         
     Bi = np.append(Bi, B1[i])#np.mean((B1[i],B2[i])))
     Bf = np.append(Bf, np.mean((B3[i],B4[i])))
-    #NO ENTIENDO POR QUE LAS CONFIANZAS ESTAS APPENDEAN EL PROMEDIO ENTRE TODAS LAS CONFIANZAS
+    #esto es cuanto confia la persona en un determinado tema
     ConfA = np.append(ConfA,np.mean((ConfA1[i], ConfA2[i],ConfA3[i],ConfA4[i])))
     ConfB = np.append(ConfB,np.mean((ConfB1[i],ConfB2[i],ConfB3[i],ConfB4[i])))
     
@@ -125,10 +124,14 @@ for i in A:
         #guardamos un 1 en M
         M = np.append(M, 1)
         #si ESTA CONDICION NO LA ENTIENDO
+        #miro el valor presentado y le resto 50
+        #y el valor respondido y le resto 50
+        #si estan del mismo lado del 50 Y
+        #fue detectada la manipulacion, es decir, N[i,8] != -1
         if (N[i,8]-50)*(N[i,9]-50) < 0 and N[i,8] != -1:
             #guardamos un 1 en D
             D = np.append(D,1)
-        #si ESTA CONDICION NO LA ENTIENDO
+        #si ...
         else:
             #guardamos un 0 en D
             D = np.append(D,0)
