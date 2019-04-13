@@ -14,10 +14,15 @@ Datos = np.load('MatrizLimpiaConCeros.npz')
 N = Datos['N'] 
 Us= Datos['Us']
 
-#%% Código para mosrarle a los Suecos en Suecia
+#%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
-
+"""
+Recorremos la columna 4 que es columna del datasheet que tiene
+el question id de las preguntas realizadas.
+Pedimos el valor de la columna 6 que es la que tiene el valor
+de la respuesta.
+"""
 A1 = - N[np.where(N[:,4] == 19)[0].astype(int),6] + 100
 A1 = A1[np.arange(0,len(A1),2)]
 A2 = N[np.where(N[:,4] == 20)[0].astype(int),6] 
@@ -30,7 +35,12 @@ B1 = B1[np.arange(0,len(B1),2)]
 #B2 = B2[np.arange(0,len(B2),2)]
 B3 = N[np.where(N[:,4] == 40)[0].astype(int),6] 
 B4 = N[np.where(N[:,4] == 41)[0].astype(int),6] 
-
+"""
+Recorremos la columna 4 que es columna del datasheet que tiene
+el question id de las preguntas realizadas.
+Pedimos el valor de la columna 11 que es la que tiene el valor
+de la confianza en la respuesta.
+"""
 ConfA1 = N[np.where(N[:,4] == 19)[0].astype(int),11]
 ConfA1 = ConfA1[np.arange(0,len(ConfA1),2)]
 ConfA2 = N[np.where(N[:,4] == 20)[0].astype(int),11] 
@@ -43,17 +53,32 @@ ConfB2 = N[np.where(N[:,4] == 22)[0].astype(int),11]
 ConfB2 = ConfB2[np.arange(0,len(ConfB2),2)]
 ConfB3 = N[np.where(N[:,4] == 40)[0].astype(int),11] 
 ConfB4 = N[np.where(N[:,4] == 41)[0].astype(int),11] 
+"""
+Recorremos la columna 4 que es columna del datasheet que tiene
+el question id de las preguntas realizadas.
+Pedimos el valor de fork en el que fue realizada cada pregunta
+"""
+F = N[np.where(N[:,4] == 62)[0].astype(int),3] 
 
-F = N[np.where(N[:,4] == 62)[0].astype(int),3]
-
+#promedio entre las dos respuestas iniciales del tema A
 Ai = np.array([])
+#promedio entre las dos respuestas finales del tema A
 Af = np.array([])
+#promedio entre las dos respuestas iniciales del tema B
 Bi = np.array([])
+#promedio entre las dos respuestas finales del tema B
 Bf = np.array([])
+"""
+Ti y Tf guardan el promedio de las respuestas Ai y Bi cuando se intenta manipular
+las respuestas a Ai(Fork 9 y 11) o Bi(Fork 10 y 12) respectivamente.
+TNMi y TNMf guardan el promedio de las respuestas Ai y Bi cuando NO se intenta manipular
+las respuestas a Ai(Fork 10 y 12) o Bi(Fork 9 y 11) respectivamente.
+"""
 Ti = np.array([])
 Tf = np.array([])
 TNMi = np.array([])
 TNMf = np.array([])
+#no entiendo por que las confianzas estas appendean el promedio entre todas las confianzas
 ConfA = np.array([])
 ConfB = np.array([])
 
@@ -67,7 +92,7 @@ for i in range(len(Us)):
         
     Bi = np.append(Bi, B1[i])#np.mean((B1[i],B2[i])))
     Bf = np.append(Bf, np.mean((B3[i],B4[i])))
-
+    #no entiendo por que las confianzas estas appendean el promedio entre todas las confianzas
     ConfA = np.append(ConfA,np.mean((ConfA1[i], ConfA2[i],ConfA3[i],ConfA4[i])))
     ConfB = np.append(ConfB,np.mean((ConfB1[i],ConfB2[i],ConfB3[i],ConfB4[i])))
     
@@ -81,23 +106,37 @@ for i in range(len(Us)):
         Tf = np.append(Tf,Bf[i])
         TNMi = np.append(TNMi,Ai[i])
         TNMf = np.append(TNMf,Af[i])   
-        
+
 
         
 
 
 M = np.array([])
 D = np.array([])
-
+"""
+Recorremos la columna 7 que es columna del datasheet que indica
+si la pregunta realizada es una repregunta con un 1, si no es
+repregunta hay un 0.
+Guardamos en A los indices para los cuales el valor es 1.
+"""
 A = np.where(N[:,7]==1)[0].astype(int) #Tomo los indices de las repreguntas
 
+#miramos solamente las filas que sean repregunta
 for i in A:
+    #si intentamos manipular a la persona
+    #es decir que le presentamos en una repregunta
+    #un valor distinto al que contesto al principio
     if N[i,6] != N[i,9]:
+        #guardamos un 1 en M
         M = np.append(M, 1)
+        #si 
         if (N[i,8]-50)*(N[i,9]-50) < 0 and N[i,8] != -1:
             D = np.append(D,1)
         else:
             D = np.append(D,0)
+    #si no intentamos manipular a la persona
+    #es decir que le presentamos en una repregunta
+    #el mismo valor al que contesto al principio
     else:
         M = np.append(M,0)    
 
