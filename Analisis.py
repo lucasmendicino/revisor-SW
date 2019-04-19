@@ -69,9 +69,9 @@ Bi = np.array([])
 #promedio entre las dos respuestas finales del tema B
 Bf = np.array([])
 """
-Ti y Tf guardan el promedio de las respuestas Ai y Bi cuando se intenta manipular
+Ti y Tf guardan el promedio de las respuestas Ai y Bi cuando se manipula
 las respuestas a Ai(Fork 9 y 11) o Bi(Fork 10 y 12) respectivamente.
-TNMi y TNMf guardan el promedio de las respuestas Ai y Bi cuando NO se intenta manipular
+TNMi y TNMf guardan el promedio de las respuestas Ai y Bi cuando NO se manipula
 las respuestas a Ai(Fork 10 y 12) o Bi(Fork 9 y 11) respectivamente.
 """
 Ti = np.array([])
@@ -155,18 +155,22 @@ for i in A:
 DR = np.sum(D)/np.sum(M) #Detection rate
 
 #%%------------------------------------%%#
+"""                                 RECORDEMOS
+-Ti guarda el promedio de las respuestas iniciales Ai cuando el Fork es 9 y 11
+y Bi cuando el Fork es 10 y 12, es decir cuando las respuestas iniciales 
+de cada fork van a ser manipuladas.
+Tf guarda la respuesta a las preguntas finales asociadas al mismo tema 
+en estos casos.
+
+-TNMi guarda el promedio de las respuestas inciales Ai cuando el Fork
+es 10 y 12 y Bi cuando el Fork es 9 y 11, es decir cuando las respuestas
+iniciales de cada fork NO van a ser manipuladas.
+TNMf guarda la respuesta a las preguntas finales asociadas al mismo tema 
+en estos casos.
 """
-Ti y Tf guarda el promedio de las respuestas Ai y Bi cuando se intenta manipular
-las respuestas a Ai(Fork 9 y 11) o Bi(Fork 10 y 12) respectivamente.
-TNMi y TNMf guardan el promedio de las respuestas Ai y Bi cuando NO se intenta manipular
-las respuestas a Ai(Fork 10 y 12) o Bi(Fork 9 y 11) respectivamente.
-"""
-"""
-Ti guarda el promdio de las respuestas iniciales Ai cuando el Fork es 9 y 11
-y Bi cuando el Fork es 10 y 12
-TNMi guarda el promedio de las respuestas inciales Ai cuando el Fork
-es 10 y 12 y guarda el promedio de las respuestas iniciales
-"""
+
+from scipy.stats import linregress as lr#importo aca para que se entienda que es lr
+#despues lo mandamos para arriba en caso de querer usarlo
 
 Tfin = np.zeros(10)
 k = np.zeros(10) # esto es para normalizar
@@ -175,25 +179,49 @@ TNMfin = np.zeros(10)
 kNM = np.zeros(10) # esto es para normalizar
 
 for i in range(len(Ti)):
-    
+    #estoy bastante seguro de que esto guarda las cosas manipuladas(lucas)
     Tfin[int(Ti[i]/11)] = Tfin[int(Ti[i]/11)] + Tf[i]
-    k[int(Ti[i]/11)] = k[int(Ti[i]/11)] + 1       
-    
+    k[int(Ti[i]/11)] = k[int(Ti[i]/11)] + 1
+    #estoy bastante seguro de que esto guarda las cosas NO manipuladas(lucas)
     TNMfin[int(TNMi[i]/11)] = TNMfin[int(TNMi[i]/11)] + TNMf[i]
-    kNM[int(TNMi[i]/11)] = kNM[int(Ti[i]/11)] + 1  
+    kNM[int(TNMi[i]/11)] = kNM[int(TNMi[i]/11)] + 1 #creo que estoy contaba mal la cantidad
+    #de datos que habia en cada intervalo
 
 Tfin = Tfin/k
-TNMfin = TNMfin/k
+TNMfin = TNMfin/kNM #me parece que estaba mal normalizado esto antes(lucas)
 
-plt.figure()
+plt.figure() #dibu
 plt.xlabel('Opening questions agreement')
 plt.ylabel('Final questions agreement')
 plt.title('All topics')
-#pregunta: estan al reves los labels aca?
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Tfin, label = 'Non manipulated')
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],TNMfin, label = 'Manipulated')
+#estoy bastante seguro de que los labels son al reves aca(lucas)
+#ya que durante el resto del codigo se hizo referencia a las cosas
+#no manipuladas con NM, me tiene confundido esto(lucas)
+#plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Tfin, label = 'Non manipulated')
+#plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],TNMfin, label = 'Manipulated')
+#scatter de promedios que hizo Milton cambiando los labels(lucas)
+plt.scatter(np.arange(5,105,10),Tfin, label = 'Manipulated', color='blue', alpha=0.8)
+plt.scatter(np.arange(5,105,10),TNMfin, label = 'Non manipulated', color='orange', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
+xx=np.linspace(0,100,500)
+slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Tfin)
+plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),TNMfin)
+plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
+
+#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
+plt.scatter(Ti,Tf, label='Ti vs Tf(manipulados)', s=2, color='red', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slope, intercept, r_value, p_value, std_err=lr(Ti,Tf)
+plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
+#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
+plt.scatter(TNMi,TNMf, label='TNMi vs TNMf(no manipulados)', s=2, color='green', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(TNMi,TNMf)
+plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
+
 plt.legend()
-plt.savefig('Totals',dpi=200)
 #%%------------------------------------%%#
 Afin = np.zeros(10)
 k = np.zeros(10)
