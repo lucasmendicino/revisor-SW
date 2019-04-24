@@ -19,10 +19,21 @@ for i in range(2): #Dentro de Range hay que poner el número de matrices que ten
     else:
         df['user_id'] += np.max(frames[0]['user_id']) #Cambia los usrID de la pregunta que uso
         df['fork'] += 2
-        df.questionId[df.questionId == 19] = 23
-        df.questionId[df.questionId == 20] = 41
-        df.questionId[df.questionId == 21] = 40
-        df.questionId[df.questionId == 22] = 41
+        df.questionId[df.questionId == 19] = 230
+        df.questionId[df.questionId == 20] = 390
+        df.questionId[df.questionId == 21] = 400
+        df.questionId[df.questionId == 22] = 410
+        
+        
+        df.questionId[df.questionId == 23] = 19
+        df.questionId[df.questionId == 39] = 20
+        df.questionId[df.questionId == 40] = 21
+        df.questionId[df.questionId == 41] = 22
+        
+        df.questionId[df.questionId == 230] = 23
+        df.questionId[df.questionId == 390] = 39
+        df.questionId[df.questionId == 400] = 40
+        df.questionId[df.questionId == 410] = 41
         
         frames.append(df)
         df_N = pd.concat(frames)
