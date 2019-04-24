@@ -82,18 +82,21 @@ ConfA = np.array([])
 ConfB = np.array([])
 
 for i in range(len(Us)):
-#    if F[i] == 11 or F[i] == 12:
-#        B2[i] = -B2[i] + 100
-    
-    Ai = np.append(Ai, np.mean((A1[i],A2[i])))
-    Af = np.append(Af, A3[i])#np.mean((A4[i],A3[i])))
-        
-    Bi = np.append(Bi, B1[i])#np.mean((B1[i],B2[i])))
-    Bf = np.append(Bf, np.mean((B3[i],B4[i])))
-    #esto es cuanto confia la persona en un determinado tema
-    ConfA = np.append(ConfA,np.mean((ConfA1[i], ConfA2[i],ConfA3[i],ConfA4[i])))
-    ConfB = np.append(ConfB,np.mean((ConfB1[i],ConfB2[i],ConfB3[i],ConfB4[i])))
-    
+    #en estos dos fork (A1, A2) son iniciales y (A3, A4) son finales
+    #en estos dos fork (B1, B2) son iniciales y (B3, B4) son finales
+    if F[i]==9 or F[i]==10:
+        Ai = np.append(Ai, np.mean((A1[i],A2[i])))
+        Bi = np.append(Bi, B1[i])#np.mean((B1[i],B2[i])))
+        Af = np.append(Af, A3[i])#np.mean((A4[i],A3[i])))
+        Bf = np.append(Bf, np.mean((B3[i],B4[i])))
+    #en estos dos fork (A3, A4) son iniciales y (A1, A2) son finales
+    #en estos dos fork (B3, B4) son iniciales y (B1, B2) son finales 
+    else:
+        Ai = np.append(Ai, A3[i])#np.mean((A4[i],A3[i])))
+        Bi = np.append(Bi, np.mean((B3[i],B4[i])))
+        Af = np.append(Af, np.mean((A1[i],A2[i])))
+        Bf = np.append(Bf, B1[i])#np.mean((B1[i],B2[i])))
+
     if F[i] == 9 or F[i] == 11:
         Ti = np.append(Ti,Ai[i])
         Tf = np.append(Tf,Af[i])
@@ -332,19 +335,3 @@ plt.savefig('BConfn',dpi=200)
 
 #%% Lo que está en el Word
 #Initial Questions (Histogram of Initial Question by gender)
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
