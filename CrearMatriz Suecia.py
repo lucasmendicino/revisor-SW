@@ -36,10 +36,13 @@ for i in range(2): #Dentro de Range hay que poner el número de matrices que ten
         df.questionId[df.questionId == 410] = 41
         
         frames.append(df)
-        df_N = pd.concat(frames)
-    
-    print(i) 
-
+    print(i)
+#sin ignore_index=true se estaban indexando mal 
+#los dataframe, conservaban sus indices y
+#eso hacia que al llamar un indice como por ejemplo en isinstance
+#se pida algo doble que tiene formato de pd.algunacosa y no
+#un string como estaba antes
+df_N = pd.concat(frames, ignore_index = True)
 df_Base = pd.read_excel('BaseSW.xlsx')
 
 #Esto estaba por si no funcaba la linea siguiente. Por ahora lo dejo
@@ -53,10 +56,13 @@ df_Base = pd.read_excel('BaseSW.xlsx')
 #df_N.ValorRespondido = ans
     
 df_N.ValorRespondido[(df_N.questionId == 31) & (df_N.ValorRespondido > 3)] -=  1    
-    
+
+"""
+No me queda claro para que se hacen estas 4 lineas siguientes
+"""
 df_N = df_N[[isinstance(x,int) for x in df_N.user_id]]
 df_N = df_N[[isinstance(x,int) for x in df_N.id]]
-df_N = df_N[[isinstance(x,str) for x in df_N.Pais]]
+df_N = df_N[[isinstance(x,unicode) for x in df_N.Pais]]
 df_N = df_N[[isinstance(x,pd.tslib.Timestamp) for x in df_N.creado_el]]
 
 df_N.sort_values(by = 'user_id', kind = 'mergesort')
@@ -99,9 +105,9 @@ del df_N['comentarios']
 del df_N['OmitirDatos?']
 del df_N['EsUsuarioDePrueba']
 
-#Revierto las preguntas que lo necesitan
-df_N.questionId[df_N.questionId == 19] = -df_N.questionId[df_N.questionId == 19] + 100
-df_N.questionId[df_N.questionId == 23] = -df_N.questionId[df_N.questionId == 23] + 100
+#Revierto las preguntas que lo necesitan(ahora si, antes estaba cambiando el questionId)
+df_N.ValorRespondido[df_N.questionId == 19] = -df_N.ValorRespondido[df_N.questionId == 19] + 100
+df_N.ValorRespondido[df_N.questionId == 23] = -df_N.ValorRespondido[df_N.questionId == 23] + 100
 
 #Guarda la matriz lista para el análisis, y un vector Us que es una lista de los id de usuarios que existen
 #DECISIÓN IMPORTANTE: Dejo solo las primeras 4 repreguntas de cada usuario
@@ -109,7 +115,4 @@ df_N.questionId[df_N.questionId == 23] = -df_N.questionId[df_N.questionId == 23]
 
 df_Base.to_pickle('BaseSW', protocol = 2)
 df_N.to_pickle('MatrizTotal', protocol = 2)
-df_users.to_pickle('MatrizUsuarios', protocol = 2)   
-
-                
-    
+df_users.to_pickle('MatrizUsuarios', protocol = 2)
