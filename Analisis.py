@@ -8,12 +8,20 @@ Created on Fri Oct 12 19:25:27 2018
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-#%% Carga la matriz
-
+#%% Carga la matriz (la hecha con numpy hace mucho)
 Datos = np.load('MatrizLimpiaConCeros.npz')
 N = Datos['N'] 
 Us= Datos['Us']
-
+#%% Carga la matriz(la nueva hecha con pandas)
+Datosdf = np.load('MatrizTotal')
+#reordeno las columnas del data frame para que a la hora de mirar columnas
+#tengan los mismo numeritos que lo que veniamos usando con la otra matriz
+Datosdf = Datosdf[['Pais','user_id','timer','fork','questionId',
+                   'TipoDePregunta','ValorRespondido','Es_Repregunta',
+                   'ValorRepregunta','ValorPresentadoPregunta',
+                   'creado_el','confianza']]
+#N es ahora un array de arrays tal y como lo era N en el caso anterior
+N=Datosdf.values
 #%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
@@ -22,6 +30,10 @@ Recorremos la columna 4 que es columna del datasheet que tiene
 el question id de las preguntas realizadas.
 Pedimos el valor de la columna 6 que es la que tiene el valor
 de la respuesta.
+"""
+"""PREGUNTA CON RESPECTO A ESTO
+por que A1, A2, B1 y B2 se agarra intercalado de esa manera
+y las otras preguntas no?
 """
 A1 = - N[np.where(N[:,4] == 19)[0].astype(int),6] + 100
 A1 = A1[np.arange(0,len(A1),2)]
