@@ -269,17 +269,55 @@ for i in range(len(Bi)):
         kNM[int(Bi[i]/11)] = kNM[int(Bi[i]/11)] + 1  
 
 Bfin = Bfin/k
-BNMfin = BNMfin/k
+BNMfin = BNMfin/kNM
+
+BiM=[] #las preguntas del tema B iniciales cuando se manipula
+BfM=[] #las preguntas del tema B finales cuando se manipula
+BNMi=[] #las preguntas del tema B iniciales cuando NO se manipula
+BNMf=[] #las preguntas del tema B finales cuando NO se manipula
+for i in range(len(Bi)):
+    #Estos forks manipulan las respuestas del tema B
+    if F[i] == 10 or F[i]==12:
+        BiM.append(Bi[i])
+        BfM.append(Bf[i])
+    #Estos no
+    else:
+        BNMi.append(Bi[i])
+        BNMf.append(Bf[i])
+
+Bi=np.array(Bi)
+Bf=np.array(Bf)
+BNMi=np.array(BNMi)
+BNMf=np.array(BNMf)
 
 plt.figure()
 plt.xlabel('Opening questions agreement')
 plt.ylabel('Final questions agreement')
 plt.title('Ecology')
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Bfin, label = 'Non manipulated')
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],BNMfin, label = 'Manipulated')
-plt.legend()
-plt.savefig('Bn',dpi=200)
 
+#scatter de promedios que hizo Milton cambiando los labels(lucas)
+plt.scatter(np.arange(5,105,10),Bfin, label = 'Manipulated', color='blue', alpha=0.8)
+plt.scatter(np.arange(5,105,10),BNMfin, label = 'Non manipulated', color='orange', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
+xx=np.linspace(0,100,500)
+slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Bfin)
+plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),BNMfin)
+plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
+
+#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
+plt.scatter(Bi,Bf, label='Bi vs Bf(manipulados)', s=2, color='red', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slope, intercept, r_value, p_value, std_err=lr(Bi,Bf)
+plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
+#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
+plt.scatter(BNMi,BNMf, label='BNMi vs BNMf(no manipulados)', s=2, color='green', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(BNMi,BNMf)
+plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
+
+plt.legend()
 #%%------------------------------------%%#
 Adif = np.zeros(10)
 k = np.zeros(10)
