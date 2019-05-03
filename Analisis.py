@@ -255,14 +255,53 @@ for i in range(len(Ai)):
 Afin = Afin/k
 ANMfin = ANMfin/k
 
+AiM=[] #las preguntas del tema A iniciales cuando se manipula
+AfM=[] #las preguntas del tema A finales cuando se manipula
+ANMi=[] #las preguntas del tema A iniciales cuando NO se manipula
+ANMf=[] #las preguntas del tema A finales cuando NO se manipula
+for i in range(len(Ai)):
+    #Estos forks manipulan las respuestas del tema A
+    if F[i] == 9 or F[i]==11:
+        AiM.append(Ai[i])
+        AfM.append(Af[i])
+    #Estos no
+    else:
+        ANMi.append(Ai[i])
+        ANMf.append(Af[i])
+
+Ai=np.array(Ai)
+Af=np.array(Af)
+ANMi=np.array(ANMi)
+ANMf=np.array(ANMf)
+
 plt.figure()
 plt.xlabel('Opening questions agreement')
 plt.ylabel('Final questions agreement')
 plt.title('Inmigration')
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Afin, label = 'Non manipulated')
-plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],ANMfin, label = 'Manipulated')
+
+#scatter de promedios que hizo Milton cambiando los labels(lucas)
+plt.scatter(np.arange(5,105,10),Afin, label = 'Manipulated', color='blue', alpha=0.8)
+plt.scatter(np.arange(5,105,10),ANMfin, label = 'Non manipulated', color='orange', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
+xx=np.linspace(0,100,500)
+slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Afin)
+plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),ANMfin)
+plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
+
+#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
+plt.scatter(Ai,Af, label='Ai vs Af(manipulados)', s=2, color='red', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slope, intercept, r_value, p_value, std_err=lr(Ai,Af)
+plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
+#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
+plt.scatter(ANMi,ANMf, label='ANMi vs ANMf(no manipulados)', s=2, color='green', alpha=0.8)
+#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(ANMi,ANMf)
+plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
+
 plt.legend()
-plt.savefig('An',dpi=200)
     
 #%%------------------------------------%%#
     
