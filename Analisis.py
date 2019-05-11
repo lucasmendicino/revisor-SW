@@ -12,52 +12,6 @@ import pandas as pd
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
 
-#%%                     ESTO SE CORRE SI SE QUIERE USAR LA MATRIZ VIEJA
-#%% Carga la matriz (la hecha con numpy hace mucho) que podriamos dejar de usar
-Datos = np.load('MatrizLimpiaConCeros.npz')
-N = Datos['N'] 
-Us= Datos['Us']
-"""
-Recorremos la columna 4 que es columna del datasheet que tiene
-el question id de las preguntas realizadas.
-Pedimos el valor de la columna 6 que es la que tiene el valor
-de la respuesta.
-"""
-"""PREGUNTA CON RESPECTO A ESTO
-por que A1, A2, B1 y B2 se agarra intercalado de esa manera
-y las otras preguntas no?
-"""
-A1 = - N[np.where(N[:,4] == 19)[0].astype(int),6] + 100
-A1 = A1[np.arange(0,len(A1),2)]
-A2 = N[np.where(N[:,4] == 20)[0].astype(int),6] 
-A2 = A2[np.arange(0,len(A2),2)]
-A3 = - N[np.where(N[:,4] == 23)[0].astype(int),6] + 100
-#A4 = N[np.where(N[:,4] == 39)[0].astype(int),6] 
-B1 = N[np.where(N[:,4] == 21)[0].astype(int),6] 
-B1 = B1[np.arange(0,len(B1),2)]
-#B2 = N[np.where(N[:,4] == 22)[0].astype(int),6] 
-#B2 = B2[np.arange(0,len(B2),2)]
-B3 = N[np.where(N[:,4] == 40)[0].astype(int),6] 
-B4 = N[np.where(N[:,4] == 41)[0].astype(int),6] 
-"""
-Recorremos la columna 4 que es columna del datasheet que tiene
-el question id de las preguntas realizadas.
-Pedimos el valor de la columna 11 que es la que tiene el valor
-de la confianza en la respuesta.
-"""
-ConfA1 = N[np.where(N[:,4] == 19)[0].astype(int),11]
-ConfA1 = ConfA1[np.arange(0,len(ConfA1),2)]
-ConfA2 = N[np.where(N[:,4] == 20)[0].astype(int),11] 
-ConfA2 = ConfA2[np.arange(0,len(ConfA2),2)]
-ConfA3 = N[np.where(N[:,4] == 23)[0].astype(int),11] 
-ConfA4 = N[np.where(N[:,4] == 39)[0].astype(int),11] 
-ConfB1 = N[np.where(N[:,4] == 21)[0].astype(int),11] 
-ConfB1 = ConfB1[np.arange(0,len(ConfB1),2)]
-ConfB2 = N[np.where(N[:,4] == 22)[0].astype(int),11] 
-ConfB2 = ConfB2[np.arange(0,len(ConfB2),2)]
-ConfB3 = N[np.where(N[:,4] == 40)[0].astype(int),11] 
-ConfB4 = N[np.where(N[:,4] == 41)[0].astype(int),11] 
-
 #%%                     ESTO SE CORRE SI SE QUIERE USAR LA MATRIZ NUEVA
 #%% Carga la matriz(la nueva hecha con pandas)
 Datosdf = np.load('MatrizTotal')
@@ -126,7 +80,7 @@ TNMf = np.array([])
 ConfA = np.array([])
 ConfB = np.array([])
 
-for i in range(len(Us)):
+for i in range(len(A1)):
     #en estos dos fork (A1, A2) son iniciales y (A3, A4) son finales
     #en estos dos fork (B1, B2) son iniciales y (B3, B4) son finales
     if F[i]==9 or F[i]==10:
