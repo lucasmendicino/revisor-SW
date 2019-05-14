@@ -224,6 +224,68 @@ slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(TNMi,TNMf)
 plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
 
 plt.legend()
+#%%                                     LINEALIDAD
+"""
+Para evaluar la linealidad de los datos y de cierta forma la confianza
+que le podemos tener a esa recta que trazamos en la regresion
+realizo primero un test chi-cuadrado, la distribucion tiene k-1 grados de libertad.
+El estadistico T da varios ordenes de magnitud mayor a la media de la distribucion
+por lo que rechazamos H0: los datos se ven bien representados por esta recta.
+
+Da un pvalor del orden de a la menos 17
+
+Comentario: ante el debate de si chi2 o t student voy a decir (lucas) que el p-valor
+es re 0 igual. Ni lo pido aca porque igual esta parte habria que borrarla en principio
+pero la funcion stats.chisquare lo tira solo.
+"""
+from scipy.stats import chi2
+plt.figure()
+y = slope * Ti + intercept
+T = np.sum((Tf - y)**2/y) #estadistico
+yNM= slopeNM * Ti + interceptNM
+TNM= np.sum((Tf - yNM)**2/yNM) #estadistico
+df=len(Tf)-1
+x = np.linspace(chi2.ppf(0.01, df),
+                chi2.ppf(0.99, df), 100)
+plt.plot(x, chi2.pdf(x, df),
+       'r-', lw=5, alpha=0.6, label='chi2 pdf')
+plt.vlines([T,TNM],0,0.006)
+#%%                                 COMPARACION DE PENDIENTES
+"""
+Asumiendo que son lineales y que las pendientes obtenidas son una variable aleatoria
+continua con distribucion N(slope,std_err**2) y N(slopeNM,std_errNM**2), es decir
+que consideramos que tienen errores gaussianos, realizo un test Z (parecido al
+ejercicio 4 de la guia de test de hipotesis de MEFE)
+Considero H0: las medias de las distribuciones son iguales (las pendientes son iguales)
+          H1: las medias de las distribuciones son distintas (las pendientes son distintas)
+Como asumimos distribuciones gaussianas entonces la resta de gaussianas es gaussianas,
+con la media que es la resta y la varianza siendo la suma de las varianzas.
+Por lo tanto si son iguales la distribucion del estadistico bajo H0
+tiene varianza std_err**2+std_errNM**2
+
+Siendo riguroso estoy considerando a los valores de slope y slopeNM como el promedio
+de cada distribucion que bueno al asumir gaussianidad es compatible
+"""
+import matplotlib.patches as mpatches
+from scipy.stats import norm
+plt.figure()
+plt.xlabel('Z')
+plt.ylabel('frecuencia')
+plt.title('All topics')
+x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
+                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
+#dibujo la distribucion del estadistico
+plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
+       'r-', lw=2, alpha=0.6, label='chi2 pdf')
+U=(slopeNM-slope)/np.sqrt(std_err**2+std_errNM**2) #estadistico
+plt.vlines(U,0,4, color='blue') #muestro el estadistico en el dibujo
+pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2))) #pvalor para U
+#dibujo el area que va a ser la mitad del p-valor por ser a dos colas
+plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
+#esto de abajo son solo los parches
+patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
+patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
+plt.legend(handles=[patch_pv, patch_area], loc='upper left')
 #%%------------------------------------%%#
 Afin = np.zeros(10)
 k = np.zeros(10)
@@ -289,9 +351,41 @@ slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(ANMi,ANMf)
 plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
 
 plt.legend()
-    
+#%%                                     LINEALIDAD
+plt.figure()
+y = slope * Ti + intercept
+T = np.sum((Tf - y)**2/y)
+yNM= slopeNM * Ti + interceptNM
+TNM= np.sum((Tf - yNM)**2/yNM)
+print(T,TNM)
+from scipy.stats import chi2
+df=len(Tf)-1
+x = np.linspace(chi2.ppf(0.01, df),
+                chi2.ppf(0.99, df), 100)
+plt.plot(x, chi2.pdf(x, df),
+       'r-', lw=5, alpha=0.6, label='chi2 pdf')
+plt.vlines([T,TNM],0,0.006)
+#%%                                 COMPARACION DE PENDIENTES
+plt.figure()
+plt.xlabel('Z')
+plt.ylabel('frecuencia')
+plt.title('Inmigration')
+import matplotlib.patches as mpatches
+from scipy.stats import norm
+x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
+                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
+plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
+       'r-', lw=2, alpha=0.6, label='chi2 pdf')
+U=(slope-slopeNM)/np.sqrt(std_err**2+std_errNM**2)
+plt.vlines(U,0,4, color='blue')
+pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2)))
+plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
+patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
+patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
+plt.legend(handles=[patch_pv, patch_area], loc='upper left')
+
 #%%------------------------------------%%#
-    
+
 Bfin = np.zeros(10)
 k = np.zeros(10)
 
@@ -356,7 +450,42 @@ slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(BNMi,BNMf)
 plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
 
 plt.legend()
+
+#%%                                     LINEALIDAD
+plt.figure()
+y = slope * Ti + intercept
+T = np.sum((Tf - y)**2/y)
+yNM= slopeNM * Ti + interceptNM
+TNM= np.sum((Tf - yNM)**2/yNM)
+print(T,TNM)
+from scipy.stats import chi2
+df=len(Tf)-1
+x = np.linspace(chi2.ppf(0.01, df),
+                chi2.ppf(0.99, df), 100)
+plt.plot(x, chi2.pdf(x, df),
+       'r-', lw=5, alpha=0.6, label='chi2 pdf')
+plt.vlines([T,TNM],0,0.006)
+#%%                                 COMPARACION DE PENDIENTES
+plt.figure()
+plt.xlabel('Z')
+plt.ylabel('frecuencia')
+plt.title('Ecology')
+import matplotlib.patches as mpatches
+from scipy.stats import norm
+x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
+                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
+plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
+       'r-', lw=2, alpha=0.6, label='chi2 pdf')
+U=(slopeNM-slope)/np.sqrt(std_err**2+std_errNM**2)
+plt.vlines(U,0,4, color='blue')
+pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2)))
+plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
+patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
+patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
+plt.legend(handles=[patch_pv, patch_area], loc='upper left')
+
 #%%------------------------------------%%#
+
 Adif = np.zeros(10)
 k = np.zeros(10)
 
