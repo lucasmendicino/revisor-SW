@@ -7,6 +7,7 @@ Created on Fri Oct 12 19:25:27 2018
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import norm
 #%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
@@ -247,22 +248,16 @@ def EstRuns(A,B):
     return runs
 
 #defino el calculo del p-valor con una aproximacion gaussiana (aproxima la distribucion del estadistico como una normal
-#de esperanza y varianza dadas por las formulas del estadistico). La funcion tambien plotea
-def PvalG(A,B,runs):
+#de esperanza y varianza dadas por las formulas del estadistico). La funcion tambien plotea, tomando un título
+def PvalG(A,B,runs,title=None):
     N=len(A)
-    M=len(B)
+    M=len(B) 
     #calculamos la esperanza y la varianza de la distribucion (usando las formulas del test runs)
     mu=2*N*M/(N+M)+1
     sigma=(2*N*M*(2*N*M-N-M)/((N+M)**2*(N+M-1)))**(0.5)
     #obtenemos la gaussiana y la ploteamos
-    dom=np.linspace(mu-6*sigma,mu+6*sigma,10000)
+    dom=np.linspace(mu-600,mu+600,10000)
     gauss=norm.pdf(dom,mu,sigma)
-    plt.plot(dom, gauss, label='Distribución Normal')
-    plt.axvline(x=runs,linestyle='--', color='r', label='Estadístico de Runs: '+str(runs))
-    plt.xlabel('Estadísticos de Runs')
-    plt.ylabel('Probabilidad')
-    plt.legend()
-    plt.show()
     #calculamos el p-valor
     pValue=0
     i=0
@@ -272,22 +267,42 @@ def PvalG(A,B,runs):
         i+=1
     for i in range(len(dom)):
         norma+=gauss[i]
+    plt.plot(dom, gauss, label='Distribución Normal')
+    plt.axvline(x=runs,linestyle='--', color='r', label='Estadístico de Runs: '+str(runs))
     pValue=pValue/norma
+    plt.plot([], [], ' ', label='P-valor: '+str(np.format_float_scientific(pValue, precision=2)))
+    plt.xlabel('Estadísticos de Runs')
+    plt.ylabel('Probabilidad')
+    plt.title(title)
+    plt.legend()
+    plt.savefig(title+'.png', dpi=150)
+    plt.show()
     return pValue
 
 #guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios manipulados que hayan contestado 
 #con un promedio de agreement mayor a 50 EN SU PRIMERA RESPUESTA 
 MMi=np.array([])
 MMf=np.array([])
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios no manipulados que hayan contestado 
+#con un promedio de agreement mayor a 50 EN SU PRIMERA RESPUESTA 
+NMMi=np.array([])
+NMMf=np.array([])
+
 
 #guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios manipulados que hayan contestado 
 #con un promedio de agreement menor a 50 EN SU PRIMERA RESPUESTA 
 Mmi=np.array([])
 Mmf=np.array([])
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios no manipulados que hayan contestado 
+#con un promedio de agreement menor a 50 EN SU PRIMERA RESPUESTA 
+NMmi=np.array([])
+NMmf=np.array([])
 
 #recorro todas las respuestas manipuladas de todos los usuarios
-for i in range(len(A1)):
-    #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50
+
+##PREGUNTAR: lo hace hasta 1981 porque despues de eso me tira error de index (revisar, porque el total es 3024)
+for i in range(1981):
+    #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50 (manipulados)
     if Ti[i]>=50:
         MMi = np.append(MMi, Ti[i])
         MMf = np.append(MMf, Tf[i])
@@ -295,13 +310,32 @@ for i in range(len(A1)):
     else:
         Mmi = np.append(Mmi, Ti[i])
         Mmf = np.append(Mmf, Tf[i])
+    #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50 (no manipulados)
+    if TNMi[i]>=50:
+        NMMi = np.append(MMi, TNMi[i])
+        NMMf = np.append(MMf, TNMf[i])
+    #guardo aquellos cuyo agreement inicial haya sido menor a 50
+    else:
+        NMmi = np.append(Mmi, TNMi[i])
+        NMmf = np.append(Mmf, TNMf[i])
+ 
+    
 
 #estadistico y p-valor del grupo de mayores de 50
 runsM=EstRuns(MMi,MMf)
-pValM=PvalG(MMi,MMf,runsM)
+pValM=PvalG(MMi,MMf,runsM,'Manipulados con agreement inicial mayor a 50')
+
 #estadistico y p-valor del grupo de menores de 50
 runsm=EstRuns(Mmi,Mmf)
-pValm=PvalG(Mmi,Mmf,runsm)
+pValm=PvalG(Mmi,Mmf,runsm,'Manipulados con agreement inicial menor a 50')
+
+#estadistico y p-valor del grupo de mayores de 50
+runsNM=EstRuns(NMMi,NMMf)
+pValNM=PvalG(NMMi,NMMf,runsNM,'No manipulados con agreement inicial mayor a 50')
+
+#estadistico y p-valor del grupo de menores de 50
+runsNm=EstRuns(NMmi,NMmf)
+pValNm=PvalG(NMmi,NMmf,runsNm,'No manipulados con agreement inicial menor a 50')
 
 #%%                                     LINEALIDAD
 """
