@@ -14,7 +14,7 @@ from scipy.stats import norm
 
 #%%                     ESTO SE CORRE SI SE QUIERE USAR LA MATRIZ NUEVA
 #%% Carga la matriz(la nueva hecha con pandas)
-Datosdf = np.load('MatrizTotal')
+Datosdf = np.load('MatrizTotal', allow_pickle=True)
 #reordeno las columnas del data frame para que a la hora de mirar columnas
 #tengan los mismo numeritos que lo que veniamos usando con la otra matriz
 Datosdf = Datosdf[['Pais','user_id','timer','fork','questionId',
@@ -226,6 +226,9 @@ plt.legend()
 
 #%%                                     TEST DE RUNS
 
+##Aviso!!! Se debe correr este codigo con la matriz sin las repreguntas 
+#(en CrearMatriz se tiene esa opcion, sino se debe filtrar por repregunta)
+
 #calculo el estadistico de runs para dos conjuntos A y B
 def EstRuns(A,B):
     #los redefino para etiquetar cada elemento con el conjunto del cual provienen
@@ -256,20 +259,20 @@ def PvalG(A,B,runs,title=None):
     mu=2*N*M/(N+M)+1
     sigma=(2*N*M*(2*N*M-N-M)/((N+M)**2*(N+M-1)))**(0.5)
     #obtenemos la gaussiana y la ploteamos
-    dom=np.linspace(mu-600,mu+600,10000)
+    dom=np.linspace(mu-30*sigma,mu+30*sigma,10000)
     gauss=norm.pdf(dom,mu,sigma)
     #calculamos el p-valor
     pValue=0
     i=0
-    norma=0
     while dom[i]<=runs:
         pValue+=gauss[i]
         i+=1
-    for i in range(len(dom)):
-        norma+=gauss[i]
+    norma=pValue
+    for j in range(i+1,len(dom),1):
+        norma+=gauss[j]
     plt.plot(dom, gauss, label='Distribución Normal')
     plt.axvline(x=runs,linestyle='--', color='r', label='Estadístico de Runs: '+str(runs))
-    pValue=pValue/norma
+    pValue/=norma
     plt.plot([], [], ' ', label='P-valor: '+str(np.format_float_scientific(pValue, precision=2)))
     plt.xlabel('Estadísticos de Runs')
     plt.ylabel('Probabilidad')
@@ -301,7 +304,7 @@ NMmf=np.array([])
 #recorro todas las respuestas manipuladas de todos los usuarios
 
 ##PREGUNTAR: lo hace hasta 1981 porque despues de eso me tira error de index (revisar, porque el total es 3024)
-for i in range(1981):
+for i in range(len(A1)):
     #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50 (manipulados)
     if Ti[i]>=50:
         MMi = np.append(MMi, Ti[i])
