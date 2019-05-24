@@ -6,8 +6,9 @@ Created on Fri Oct 12 19:25:27 2018
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import pandas as pd
-from scipy.stats import norm
+from scipy.stats import norm, linregress as lr, chi2
 #%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
@@ -169,63 +170,151 @@ iniciales de cada fork NO van a ser manipuladas.
 TNMf guarda la respuesta a las preguntas finales asociadas al mismo tema 
 en estos casos.
 """
-
-from scipy.stats import linregress as lr#importo aca para que se entienda que es lr
-#despues lo mandamos para arriba en caso de querer usarlo
-
-Tfin = np.zeros(10)
-k = np.zeros(10) # esto es para normalizar
-
-TNMfin = np.zeros(10)
-kNM = np.zeros(10) # esto es para normalizar
-
-for i in range(len(Ti)):
-    #estoy bastante seguro de que esto guarda las cosas manipuladas(lucas)
-    Tfin[int(Ti[i]/11)] = Tfin[int(Ti[i]/11)] + Tf[i]
-    k[int(Ti[i]/11)] = k[int(Ti[i]/11)] + 1
-    #estoy bastante seguro de que esto guarda las cosas NO manipuladas(lucas)
-    TNMfin[int(TNMi[i]/11)] = TNMfin[int(TNMi[i]/11)] + TNMf[i]
-    kNM[int(TNMi[i]/11)] = kNM[int(TNMi[i]/11)] + 1 #creo que estoy contaba mal la cantidad
-    #de datos que habia en cada intervalo
-
-Tfin = Tfin/k
-TNMfin = TNMfin/kNM #me parece que estaba mal normalizado esto antes(lucas)
-
-plt.figure() #dibu
-plt.xlabel('Opening questions agreement')
-plt.ylabel('Final questions agreement')
-plt.title('All topics')
-#estoy bastante seguro de que los labels son al reves aca(lucas)
-#ya que durante el resto del codigo se hizo referencia a las cosas
-#no manipuladas con NM, me tiene confundido esto(lucas)
-#plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],Tfin, label = 'Non manipulated')
-#plt.scatter(['0-10','11-20','21-30','31-40','41-50','51-60','61-70','71-80','81-90','91-100'],TNMfin, label = 'Manipulated')
-#scatter de promedios que hizo Milton cambiando los labels(lucas)
-plt.scatter(np.arange(5,105,10),Tfin, label = 'Manipulated', color='blue', alpha=0.8)
-plt.scatter(np.arange(5,105,10),TNMfin, label = 'Non manipulated', color='orange', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
-xx=np.linspace(0,100,500)
-slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Tfin)
-plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),TNMfin)
-plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
-
-#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
-plt.scatter(Ti,Tf, label='Ti vs Tf(manipulados)', s=2, color='red', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slope, intercept, r_value, p_value, std_err=lr(Ti,Tf)
-plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
-#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
-plt.scatter(TNMi,TNMf, label='TNMi vs TNMf(no manipulados)', s=2, color='green', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(TNMi,TNMf)
-plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
-
-plt.legend()
+#%%                         FUNCIONES PARA SCATTER CON AJUSTE, CHI2 Y TEST Z
+###                             REGRESION LINEAL CON GRAFICOS
+def RegLineal(A,B,C,D,stringAB,stringCD,title,xlab,ylab):
+    plt.figure(figsize=(5,4))
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
+    plt.title(title)
+    xx=np.linspace(0,100,500)
+    #scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
+    plt.scatter(A,B, label=stringAB, s=2, color='red', alpha=0.8)
+    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+    slopeAB, interceptAB, r_value, p_value, std_errAB=lr(A,B)
+    plt.plot(xx,slopeAB*xx+interceptAB, color='red', alpha=0.8)
+    #scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
+    plt.scatter(C,D, label=stringCD, s=2, color='green', alpha=0.8)
+    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+    slopeCD, interceptCD, r_valueNM, p_valueNM, std_errCD=lr(C,D)
+    plt.plot(xx,slopeCD*xx+interceptCD, color='green', alpha=0.8)
+    plt.legend(loc='upper left')
+    plt.tight_layout()
+    return slopeAB, interceptAB, std_errAB, slopeCD, interceptCD, std_errCD
+###                         TEST CHICUADRADO CON GRAFICO
+def ChiCuadrado(A,B,C,D,stringAB,stringCD, slopeAB, interceptAB, slopeCD, interceptCD, title):
+    plt.figure(figsize=(5,4))
+    plt.title(title)
+    yAB = slopeAB * A + interceptAB
+    TAB = np.sum((B - yAB)**2/yAB) #estadistico
+    yCD= slopeCD * C + interceptCD
+    TCD= np.sum((D - yCD)**2/yCD) #estadistico
+    df=len(B)-1
+    def chi2Acumulada(X):
+        return chi2.cdf(X,df)
+    x = np.linspace(df-50*np.sqrt(df),df+50*np.sqrt(df),100)
+    plt.plot(x, chi2.pdf(x, df),
+       'r-', lw=2, alpha=0.6)
+    plt.vlines(TAB,0,max(chi2.pdf(x, df)), color='red', label = stringAB + ' %d' %TAB)
+    plt.vlines(TCD,0,max(chi2.pdf(x, df)),color='green', label = stringCD + ' %d' %TCD)
+    pvAB=1-chi2.cdf(TAB,df) #pvalor para AB
+    pvCD=1-chi2.cdf(TCD,df) #pvalor para CD
+    plt.legend(loc='upper left')
+    plt.tight_layout()
+    return pvAB, TAB, pvCD, TCD
+###                                 TEST Z
+def testZ(slopeAB, std_errAB, slopeCD, std_errCD, title):
+    plt.figure(figsize=(5,4))
+    plt.title(title)
+    sigma=np.sqrt(std_errAB**2+std_errCD**2)
+    x = np.linspace(-10*sigma, 10*sigma, 1000)
+    #defino estas dos para que sea menos feo abajo
+    def gauss(X):
+        g = norm.pdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
+        return g
+    def gaussAcumulada(X):
+        gAc = norm.cdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
+        return gAc
+    #dibujo la distribucion del estadistico
+    plt.plot(x, gauss(x),
+           'r-', lw=2, alpha=0.6, label='gaussiana')
+    U=(slopeCD-slopeAB)/np.sqrt(std_errAB**2+std_errCD**2) #estadistico
+    plt.vlines(U,0,max(gauss(x)), color='blue') #muestro el estadistico en el dibujo
+    if U > 0:
+        pv=1-(2*(gaussAcumulada(U)-gaussAcumulada(0))) #pvalor para U
+        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
+        xx=np.linspace(U,x[-1],15)
+        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
+    else:
+        pv=1-(2*(gaussAcumulada(0)-gaussAcumulada(U))) #pvalor para U
+        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
+        xx=np.linspace(x[1],U,15)
+        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
+    patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %f' %(pv), alpha=0.4)
+    patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %f' %(pv/2), alpha=0.4)
+    plt.legend(handles=[patch_pv, patch_area], loc='upper left')
+    plt.tight_layout()
+    return pv, U
+#%%                             All topics
+#regresion lineal
+slope, intercept, std_err, slopeNM, interceptNM, std_errNM = RegLineal(Ti, Tf, TNMi, TNMf, 
+                'manipulados','no manipulados','All topics','Opening questions agreement',
+                'Final questions agreement')
+#testChiCuadrado
+pvTiTf, TTiTf, pvTNMiTNMf, TTNMiTNMf = ChiCuadrado(Ti,Tf,TNMi,TNMf,
+                 'manipulados','no manipulados', slope, intercept, 
+                 slopeNM, interceptNM, 'All Topics')
+#testZ
+pV, u = testZ(slope, std_err, slopeNM, std_errNM,'All topics')
+#%%                             Inmigration
+AiM=[] #las preguntas del tema A iniciales cuando se manipula
+AfM=[] #las preguntas del tema A finales cuando se manipula
+ANMi=[] #las preguntas del tema A iniciales cuando NO se manipula
+ANMf=[] #las preguntas del tema A finales cuando NO se manipula
+for i in range(len(Ai)):
+    #Estos forks manipulan las respuestas del tema A
+    if F[i] == 9 or F[i]==11:
+        AiM.append(Ai[i])
+        AfM.append(Af[i])
+    #Estos no
+    else:
+        ANMi.append(Ai[i])
+        ANMf.append(Af[i])
+Ai=np.array(Ai)
+Af=np.array(Af)
+ANMi=np.array(ANMi)
+ANMf=np.array(ANMf)
+#regresion lineal
+slope, intercept, std_err, slopeNM, interceptNM, std_errNM = RegLineal(Ai,Af,ANMi,ANMf,
+          'manipulados','no manipulados','Inmigration',
+          'Opening questions agreement','Final questions agreement')
+#testChiCuadrado
+pvAiAf, TAiAf, pvANMiANMf, TANMiANMf = ChiCuadrado(Ai,Af,ANMi,ANMf,
+                 'manipulados','no manipulados', slope, intercept,
+                 slopeNM, interceptNM, 'Inmigration')
+#TestZ
+pV, u = testZ(slope, std_err, slopeNM, std_errNM,'Inmigration')
+#%%                              Ecology
+BiM=[] #las preguntas del tema B iniciales cuando se manipula
+BfM=[] #las preguntas del tema B finales cuando se manipula
+BNMi=[] #las preguntas del tema B iniciales cuando NO se manipula
+BNMf=[] #las preguntas del tema B finales cuando NO se manipula
+for i in range(len(Bi)):
+    #Estos forks manipulan las respuestas del tema B
+    if F[i] == 10 or F[i]==12:
+        BiM.append(Bi[i])
+        BfM.append(Bf[i])
+    #Estos no
+    else:
+        BNMi.append(Bi[i])
+        BNMf.append(Bf[i])
+Bi=np.array(Bi)
+Bf=np.array(Bf)
+BNMi=np.array(BNMi)
+BNMf=np.array(BNMf)
+#regresion lineal
+slope, intercept, std_err, slopeNM, interceptNM, std_errNM = RegLineal(Bi,Bf,BNMi,BNMf,
+          'manipulados','no manipulados','Ecology',
+          'Opening questions agreement','Final questions agreement')
+#testChiCuadrado
+pvTiTf, TTiTf, pvTNMiTNMf, TTNMiTNMf = ChiCuadrado(Bi,Bf,BNMi,BNMf,
+                 'manipulados','no manipulados', slope, intercept,
+                 slopeNM, interceptNM, 'Ecology')
+#TestZ
+pV, u = testZ(slope, std_err, slopeNM, std_errNM,'Ecology')
 
 #%%                                     TEST DE RUNS
-
+#%%
 ##Aviso!!! Se debe correr este codigo con la matriz sin las repreguntas 
 #(en CrearMatriz se tiene esa opcion, sino se debe filtrar por repregunta)
 
@@ -340,262 +429,7 @@ pValNM=PvalG(NMMi,NMMf,runsNM,'No manipulados con agreement inicial mayor a 50')
 runsNm=EstRuns(NMmi,NMmf)
 pValNm=PvalG(NMmi,NMmf,runsNm,'No manipulados con agreement inicial menor a 50')
 
-#%%                                     LINEALIDAD
-"""
-Para evaluar la linealidad de los datos y de cierta forma la confianza
-que le podemos tener a esa recta que trazamos en la regresion
-realizo primero un test chi-cuadrado, la distribucion tiene k-1 grados de libertad.
-El estadistico T da varios ordenes de magnitud mayor a la media de la distribucion
-por lo que rechazamos H0: los datos se ven bien representados por esta recta.
-Da un pvalor del orden de a la menos 17
-Comentario: ante el debate de si chi2 o t student voy a decir (lucas) que el p-valor
-es re 0 igual. Ni lo pido aca porque igual esta parte habria que borrarla en principio
-pero la funcion stats.chisquare lo tira solo.
-"""
-from scipy.stats import chi2
-plt.figure()
-y = slope * Ti + intercept
-T = np.sum((Tf - y)**2/y) #estadistico
-yNM= slopeNM * Ti + interceptNM
-TNM= np.sum((Tf - yNM)**2/yNM) #estadistico
-df=len(Tf)-1
-x = np.linspace(chi2.ppf(0.01, df),
-                chi2.ppf(0.99, df), 100)
-plt.plot(x, chi2.pdf(x, df),
-       'r-', lw=5, alpha=0.6, label='chi2 pdf')
-plt.vlines([T,TNM],0,0.006)
-#%%                                 COMPARACION DE PENDIENTES
-"""
-Asumiendo que son lineales y que las pendientes obtenidas son una variable aleatoria
-continua con distribucion N(slope,std_err**2) y N(slopeNM,std_errNM**2), es decir
-que consideramos que tienen errores gaussianos, realizo un test Z (parecido al
-ejercicio 4 de la guia de test de hipotesis de MEFE)
-Considero H0: las medias de las distribuciones son iguales (las pendientes son iguales)
-          H1: las medias de las distribuciones son distintas (las pendientes son distintas)
-Como asumimos distribuciones gaussianas entonces la resta de gaussianas es gaussianas,
-con la media que es la resta y la varianza siendo la suma de las varianzas.
-Por lo tanto si son iguales la distribucion del estadistico bajo H0
-tiene varianza std_err**2+std_errNM**2
-Siendo riguroso estoy considerando a los valores de slope y slopeNM como el promedio
-de cada distribucion que bueno al asumir gaussianidad es compatible
-"""
-import matplotlib.patches as mpatches
-from scipy.stats import norm
-plt.figure()
-plt.xlabel('Z')
-plt.ylabel('frecuencia')
-plt.title('All topics')
-x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
-                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
-#dibujo la distribucion del estadistico
-plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
-       'r-', lw=2, alpha=0.6, label='chi2 pdf')
-U=(slopeNM-slope)/np.sqrt(std_err**2+std_errNM**2) #estadistico
-plt.vlines(U,0,4, color='blue') #muestro el estadistico en el dibujo
-pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2))) #pvalor para U
-#dibujo el area que va a ser la mitad del p-valor por ser a dos colas
-plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
-#esto de abajo son solo los parches
-patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
-patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
-plt.legend(handles=[patch_pv, patch_area], loc='upper left')
-#%%------------------------------------%%#
-Afin = np.zeros(10)
-k = np.zeros(10)
 
-ANMfin = np.zeros(10)
-kNM = np.zeros(10)
-
-for i in range(len(Ai)):
-    if F[i] == 9 or F[i]==11:
-        Afin[int(Ai[i]/11)] = Afin[int(Ai[i]/11)] + Af[i]
-        k[int(Ai[i]/11)] = k[int(Ai[i]/11)] + 1       
-    else:
-        ANMfin[int(Ai[i]/11)] = ANMfin[int(Ai[i]/11)] + Af[i]
-        kNM[int(Ai[i]/11)] = kNM[int(Ai[i]/11)] + 1  
-
-Afin = Afin/k
-ANMfin = ANMfin/k
-
-AiM=[] #las preguntas del tema A iniciales cuando se manipula
-AfM=[] #las preguntas del tema A finales cuando se manipula
-ANMi=[] #las preguntas del tema A iniciales cuando NO se manipula
-ANMf=[] #las preguntas del tema A finales cuando NO se manipula
-for i in range(len(Ai)):
-    #Estos forks manipulan las respuestas del tema A
-    if F[i] == 9 or F[i]==11:
-        AiM.append(Ai[i])
-        AfM.append(Af[i])
-    #Estos no
-    else:
-        ANMi.append(Ai[i])
-        ANMf.append(Af[i])
-
-Ai=np.array(Ai)
-Af=np.array(Af)
-ANMi=np.array(ANMi)
-ANMf=np.array(ANMf)
-
-plt.figure()
-plt.xlabel('Opening questions agreement')
-plt.ylabel('Final questions agreement')
-plt.title('Inmigration')
-
-#scatter de promedios que hizo Milton cambiando los labels(lucas)
-plt.scatter(np.arange(5,105,10),Afin, label = 'Manipulated', color='blue', alpha=0.8)
-plt.scatter(np.arange(5,105,10),ANMfin, label = 'Non manipulated', color='orange', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
-xx=np.linspace(0,100,500)
-slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Afin)
-plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),ANMfin)
-plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
-
-#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
-plt.scatter(Ai,Af, label='Ai vs Af(manipulados)', s=2, color='red', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slope, intercept, r_value, p_value, std_err=lr(Ai,Af)
-plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
-#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
-plt.scatter(ANMi,ANMf, label='ANMi vs ANMf(no manipulados)', s=2, color='green', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(ANMi,ANMf)
-plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
-
-plt.legend()
-#%%                                     LINEALIDAD
-plt.figure()
-y = slope * Ti + intercept
-T = np.sum((Tf - y)**2/y)
-yNM= slopeNM * Ti + interceptNM
-TNM= np.sum((Tf - yNM)**2/yNM)
-print(T,TNM)
-from scipy.stats import chi2
-df=len(Tf)-1
-x = np.linspace(chi2.ppf(0.01, df),
-                chi2.ppf(0.99, df), 100)
-plt.plot(x, chi2.pdf(x, df),
-       'r-', lw=5, alpha=0.6, label='chi2 pdf')
-plt.vlines([T,TNM],0,0.006)
-#%%                                 COMPARACION DE PENDIENTES
-plt.figure()
-plt.xlabel('Z')
-plt.ylabel('frecuencia')
-plt.title('Inmigration')
-import matplotlib.patches as mpatches
-from scipy.stats import norm
-x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
-                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
-plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
-       'r-', lw=2, alpha=0.6, label='chi2 pdf')
-U=(slope-slopeNM)/np.sqrt(std_err**2+std_errNM**2)
-plt.vlines(U,0,4, color='blue')
-pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2)))
-plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
-patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
-patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
-plt.legend(handles=[patch_pv, patch_area], loc='upper left')
-
-#%%------------------------------------%%#
-
-Bfin = np.zeros(10)
-k = np.zeros(10)
-
-BNMfin = np.zeros(10)
-kNM = np.zeros(10)
-
-for i in range(len(Bi)):
-    if F[i] == 10 or F[i]==12:
-        Bfin[int(Bi[i]/11)] = Bfin[int(Bi[i]/11)] + Bf[i]
-        k[int(Bi[i]/11)] = k[int(Bi[i]/11)] + 1       
-    else:
-        BNMfin[int(Bi[i]/11)] = BNMfin[int(Bi[i]/11)] + Bf[i]
-        kNM[int(Bi[i]/11)] = kNM[int(Bi[i]/11)] + 1  
-
-Bfin = Bfin/k
-BNMfin = BNMfin/kNM
-
-BiM=[] #las preguntas del tema B iniciales cuando se manipula
-BfM=[] #las preguntas del tema B finales cuando se manipula
-BNMi=[] #las preguntas del tema B iniciales cuando NO se manipula
-BNMf=[] #las preguntas del tema B finales cuando NO se manipula
-for i in range(len(Bi)):
-    #Estos forks manipulan las respuestas del tema B
-    if F[i] == 10 or F[i]==12:
-        BiM.append(Bi[i])
-        BfM.append(Bf[i])
-    #Estos no
-    else:
-        BNMi.append(Bi[i])
-        BNMf.append(Bf[i])
-
-Bi=np.array(Bi)
-Bf=np.array(Bf)
-BNMi=np.array(BNMi)
-BNMf=np.array(BNMf)
-
-plt.figure()
-plt.xlabel('Opening questions agreement')
-plt.ylabel('Final questions agreement')
-plt.title('Ecology')
-
-#scatter de promedios que hizo Milton cambiando los labels(lucas)
-plt.scatter(np.arange(5,105,10),Bfin, label = 'Manipulated', color='blue', alpha=0.8)
-plt.scatter(np.arange(5,105,10),BNMfin, label = 'Non manipulated', color='orange', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-#usando como datos los promedios(no se ni para que lo hice, miterio)(lucas)
-xx=np.linspace(0,100,500)
-slope, intercept, r_value, p_value, std_err=lr(np.arange(5,105,10),Bfin)
-plt.plot(xx,slope*xx+intercept, color='blue', alpha=0.8)
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(np.arange(5,105,10),BNMfin)
-plt.plot(xx,slopeNM*xx+interceptNM, color='orange', alpha=0.8)
-
-#scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
-plt.scatter(Bi,Bf, label='Bi vs Bf(manipulados)', s=2, color='red', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slope, intercept, r_value, p_value, std_err=lr(Bi,Bf)
-plt.plot(xx,slope*xx+intercept, color='red', alpha=0.8)
-#scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
-plt.scatter(BNMi,BNMf, label='BNMi vs BNMf(no manipulados)', s=2, color='green', alpha=0.8)
-#regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(BNMi,BNMf)
-plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
-
-plt.legend()
-
-#%%                                     LINEALIDAD
-plt.figure()
-y = slope * Ti + intercept
-T = np.sum((Tf - y)**2/y)
-yNM= slopeNM * Ti + interceptNM
-TNM= np.sum((Tf - yNM)**2/yNM)
-print(T,TNM)
-from scipy.stats import chi2
-df=len(Tf)-1
-x = np.linspace(chi2.ppf(0.01, df),
-                chi2.ppf(0.99, df), 100)
-plt.plot(x, chi2.pdf(x, df),
-       'r-', lw=5, alpha=0.6, label='chi2 pdf')
-plt.vlines([T,TNM],0,0.006)
-#%%                                 COMPARACION DE PENDIENTES
-plt.figure()
-plt.xlabel('Z')
-plt.ylabel('frecuencia')
-plt.title('Ecology')
-import matplotlib.patches as mpatches
-from scipy.stats import norm
-x = np.linspace(norm.ppf(0.0001,0,np.sqrt(std_err**2+std_errNM**2)),
-                norm.ppf(0.9999,0,np.sqrt(std_err**2+std_errNM**2)), 1000)
-plt.plot(x, norm.pdf(x,0,np.sqrt(std_err**2+std_errNM**2)),
-       'r-', lw=2, alpha=0.6, label='chi2 pdf')
-U=(slopeNM-slope)/np.sqrt(std_err**2+std_errNM**2)
-plt.vlines(U,0,4, color='blue')
-pv=2*(1-norm.cdf(U,0,np.sqrt(std_err**2+std_errNM**2)))
-plt.fill_between(np.linspace(U,x[-1],15), 0, norm.pdf(np.linspace(U,x[-1],15),0,np.sqrt(std_err**2+std_errNM**2)),color='r', alpha=0.4)
-patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %3.3f' %(pv), alpha=0.4)
-patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %3.3f' %(pv/2), alpha=0.4)
-plt.legend(handles=[patch_pv, patch_area], loc='upper left')
 
 #%%------------------------------------%%#
 
