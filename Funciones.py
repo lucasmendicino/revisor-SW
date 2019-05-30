@@ -70,3 +70,131 @@ def PvalR(A,B,runs,title=None):
     else:
         pass
     return pValue
+
+#%%                         FUNCIONES PARA SCATTER CON AJUSTE, CHI2 Y TEST Z
+###                             REGRESION LINEAL CON GRAFICOS
+"""Esto es una regresion lineal como de las que estamos acostumbrados, genera
+la recta que mejor describe los datos que tenemos minimizando la distancia
+cuadratica en el eje y a la recta.
+    Entradas
+A: conjunto de respuestas iniciales del subgrupo 1
+B: conjunto de respuestas finales del subgrupo 1
+C: conjunto de respuestas iniciales del subgrupo 2
+D: conjunto de respuestas finales del subgrupo 2
+stringAB y stringCD son strings con lo que va en el legend de cada uno
+title, xlab e ylab son el titulo y lo del eje x e y del grafico
+    Salidas
+slopeAB, interceptAB, std_errAB son los que salen de la regresion entre A y B
+slopeCD, interceptCD, std_errCD son los que salen de la regresion entre C y D
+"""
+def RegLineal(A,B,C,D,stringAB,stringCD,title,xlab,ylab):
+    plt.figure(figsize=(5,4))
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
+    plt.title(title)
+    xx=np.linspace(0,100,500)
+    #scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
+    plt.scatter(A,B, label=stringAB, s=2, color='red', alpha=0.8)
+    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+    slopeAB, interceptAB, r_value, p_value, std_errAB=lr(A,B)
+    plt.plot(xx,slopeAB*xx+interceptAB, color='red', alpha=0.8)
+    #scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
+    plt.scatter(C,D, label=stringCD, s=2, color='green', alpha=0.8)
+    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
+    slopeCD, interceptCD, r_valueNM, p_valueNM, std_errCD=lr(C,D)
+    plt.plot(xx,slopeCD*xx+interceptCD, color='green', alpha=0.8)
+    plt.legend(loc='upper left')
+    plt.tight_layout()
+    return slopeAB, interceptAB, std_errAB, slopeCD, interceptCD, std_errCD
+###                         TEST CHICUADRADO CON GRAFICO
+"""Este test nos da una idea de la bondad del ajuste de RegLineal a los datos. El
+estadistico se genera sumando sobre todos los datos la distancia al cuadrado de
+un dato a la curva teorica en ese mismo X(el valor esperado) dividido(pesado) por
+el valor en Y de la curva teorica en ese X. La distribucion es chi2 con N-1 
+grados de libertad. El pvalor nos da una idea de que tan bien describe la recta
+a nuestros datos, cuanto mayor a la media de la distribucion sea el estadistico
+tendremos un pvalor menor y por lo tanto con mas ganas descartaremos la H0 de que
+nuestros datos estan bien descriptos por la recta.
+    Entradas
+A: conjunto de respuestas iniciales del subgrupo 1
+B: conjunto de respuestas finales del subgrupo 1
+C: conjunto de respuestas iniciales del subgrupo 2
+D: conjunto de respuestas finales del subgrupo 2
+stringAB y stringCD son strings con lo que va en el legend de cada uno
+slopeAB, interceptAB, slopeCD, interceptCD son los parametros que salen de RegLineal
+    Salidas
+pvAB y TAB son el p-valor y el estadistico obtenido para el subgrupo 1
+pvCD y TCD son el p-valor y el estadistico obtenido para el subgrupo 2
+"""
+def ChiCuadrado(A,B,C,D,stringAB,stringCD, slopeAB, interceptAB, slopeCD, interceptCD, title):
+    plt.figure(figsize=(5,4))
+    plt.title(title)
+    yAB = slopeAB * A + interceptAB
+    TAB = np.sum((B - yAB)**2/yAB) #estadistico
+    yCD= slopeCD * C + interceptCD
+    TCD= np.sum((D - yCD)**2/yCD) #estadistico
+    df=len(B)-1
+    def chi2Acumulada(X):
+        return chi2.cdf(X,df)
+    x = np.linspace(df-50*np.sqrt(df),df+50*np.sqrt(df),100)
+    plt.plot(x, chi2.pdf(x, df),
+       'r-', lw=2, alpha=0.6)
+    plt.vlines(TAB,0,max(chi2.pdf(x, df)), color='red', label = stringAB + ' %d' %TAB)
+    plt.vlines(TCD,0,max(chi2.pdf(x, df)),color='green', label = stringCD + ' %d' %TCD)
+    pvAB=1-chi2.cdf(TAB,df) #pvalor para AB
+    pvCD=1-chi2.cdf(TCD,df) #pvalor para CD
+    plt.legend(loc='upper left')
+    plt.tight_layout()
+    return pvAB, TAB, pvCD, TCD
+###                                 TEST Z
+""" Este test se usa para comparar las pendientes obtenidas en RegLineal. 
+Asumiendo que los datos son lineales y que las pendientes obtenidas son una variable
+aleatoria continua con distribucion N(slopeAB,std_errAB^2) y N(slopeCD,std\_errCD^2),
+es decir, que consideramos que los errores de la pendiente calculados por cuadrados minimos
+son gaussianos con IC 68% [slopeAB-std_err^2,slopeAB+std_err^2]. Dicho esto consideramos
+H0: las medias de las distribuciones son iguales (las pendientes son iguales)
+H1: las medias de las distribuciones son distintas (las pendientes son distintas)
+Por lo tanto la distribucion del estadistico sera una N(0,std_errAB^2 + std_errCD^2)
+pues H0 es que las medias son iguales. Asi el estadistico es 
+U = (slopeCD-slopeAB)/sqrt[std_errAB^2+std_errCD^2].
+Por ultimo el pvalor es el doble del area encerrada entre el estadistico y 
+el infinito correspondiente por ser a dos colas.
+
+    Entradas
+slopeAB, std_errAB, slopeCD, std_errCD son los parametros que salen de RegLineal
+    Salidas
+pv y U son el p-valor a dos colas y el estadistico del test
+"""
+
+def testZ(slopeAB, std_errAB, slopeCD, std_errCD, title):
+    plt.figure(figsize=(5,4))
+    plt.title(title)
+    sigma=np.sqrt(std_errAB**2+std_errCD**2)
+    x = np.linspace(-10*sigma, 10*sigma, 1000)
+    #defino estas dos para que sea menos feo abajo
+    def gauss(X):
+        g = norm.pdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
+        return g
+    def gaussAcumulada(X):
+        gAc = norm.cdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
+        return gAc
+    #dibujo la distribucion del estadistico
+    plt.plot(x, gauss(x),
+           'r-', lw=2, alpha=0.6, label='gaussiana')
+    U=(slopeCD-slopeAB)/np.sqrt(std_errAB**2+std_errCD**2) #estadistico
+    plt.vlines(U,0,max(gauss(x)), color='blue') #muestro el estadistico en el dibujo
+    if U > 0:
+        pv=1-(2*(gaussAcumulada(U)-gaussAcumulada(0))) #pvalor para U
+        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
+        xx=np.linspace(U,x[-1],15)
+        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
+    else:
+        pv=1-(2*(gaussAcumulada(0)-gaussAcumulada(U))) #pvalor para U
+        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
+        xx=np.linspace(x[1],U,15)
+        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
+    patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %f' %(pv), alpha=0.4)
+    patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %f' %(pv/2), alpha=0.4)
+    plt.legend(handles=[patch_pv, patch_area], loc='upper left')
+    plt.tight_layout()
+return pv, U
