@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
+import matplotlib.patches as mpatches
+from scipy.stats import norm, chi2, linregress as lr
 
 #%%                                     TEST DE RUNS
 """Este test se usa para averiguar si dos conjuntos provienen de distribuciones con la misma esperanza. Consiste en 
@@ -139,10 +140,12 @@ def ChiCuadrado(A,B,C,D,stringAB,stringCD, slopeAB, interceptAB, slopeCD, interc
     x = np.linspace(df-50*np.sqrt(df),df+50*np.sqrt(df),100)
     plt.plot(x, chi2.pdf(x, df),
        'r-', lw=2, alpha=0.6)
-    plt.vlines(TAB,0,max(chi2.pdf(x, df)), color='red', label = stringAB + ' %d' %TAB)
-    plt.vlines(TCD,0,max(chi2.pdf(x, df)),color='green', label = stringCD + ' %d' %TCD)
     pvAB=1-chi2.cdf(TAB,df) #pvalor para AB
     pvCD=1-chi2.cdf(TCD,df) #pvalor para CD
+    plt.vlines(TAB,0,max(chi2.pdf(x, df)), color='red',
+               label = 'P-valor '+stringAB+': '+str(np.format_float_scientific(pvAB, precision=2)))
+    plt.vlines(TCD,0,max(chi2.pdf(x, df)),color='green',
+               label = 'P-valor '+stringCD+': '+str(np.format_float_scientific(pvCD, precision=2)))
     plt.legend(loc='upper left')
     plt.tight_layout()
     return pvAB, TAB, pvCD, TCD
@@ -170,7 +173,7 @@ def testZ(slopeAB, std_errAB, slopeCD, std_errCD, title):
     plt.figure(figsize=(5,4))
     plt.title(title)
     sigma=np.sqrt(std_errAB**2+std_errCD**2)
-    x = np.linspace(-10*sigma, 10*sigma, 1000)
+    x = np.linspace(-10*sigma, 10*sigma, 100000)
     #defino estas dos para que sea menos feo abajo
     def gauss(X):
         g = norm.pdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
@@ -183,18 +186,33 @@ def testZ(slopeAB, std_errAB, slopeCD, std_errCD, title):
            'r-', lw=2, alpha=0.6, label='gaussiana')
     U=(slopeCD-slopeAB)/np.sqrt(std_errAB**2+std_errCD**2) #estadistico
     plt.vlines(U,0,max(gauss(x)), color='blue') #muestro el estadistico en el dibujo
+    Gau = gauss(x)/sum(gauss(x))
     if U > 0:
-        pv=1-(2*(gaussAcumulada(U)-gaussAcumulada(0))) #pvalor para U
+        pv=0
+        i=0
+        while x[i]<=U:
+            pv+=Gau[i]
+            i+=1
+        pv=2*(1-pv)
         #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
-        xx=np.linspace(U,x[-1],15)
+        xx=np.linspace(U,x[-1],10000)
         plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
     else:
-        pv=1-(2*(gaussAcumulada(0)-gaussAcumulada(U))) #pvalor para U
+        pv=0
+        i=0
+        while x[i]<=U:
+            pv+=Gau[i]
+            i+=1
+        pv=2*pv
         #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
-        xx=np.linspace(x[1],U,15)
+        xx=np.linspace(x[1],U,10000)
         plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
-    patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %f' %(pv), alpha=0.4)
-    patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %f' %(pv/2), alpha=0.4)
+    patch_pv = mpatches.Patch(color='blue',
+                              label='P-valor: '+str(np.format_float_scientific(pv, precision=2)),
+                              alpha=0.4)
+    patch_area = mpatches.Patch(color='red',
+                                label='Area bajo la curva: '+str(np.format_float_scientific(pv/2, precision=2)),
+                                alpha=0.4)
     plt.legend(handles=[patch_pv, patch_area], loc='upper left')
     plt.tight_layout()
-return pv, U
+    return pv, U
