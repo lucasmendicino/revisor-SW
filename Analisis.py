@@ -8,12 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import pandas as pd
-from scipy.stats import norm, linregress as lr, chi2
+from scipy.stats import norm
+from Funciones import EstRuns, PvalR, RegLineal, ChiCuadrado, testZ
 #%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
 
-#%%                     ESTO SE CORRE SI SE QUIERE USAR LA MATRIZ NUEVA
+#%% 
 #%% Carga la matriz(la nueva hecha con pandas)
 Datosdf = np.load('MatrizTotal', allow_pickle=True)
 #reordeno las columnas del data frame para que a la hora de mirar columnas
@@ -170,81 +171,6 @@ iniciales de cada fork NO van a ser manipuladas.
 TNMf guarda la respuesta a las preguntas finales asociadas al mismo tema 
 en estos casos.
 """
-#%%                         FUNCIONES PARA SCATTER CON AJUSTE, CHI2 Y TEST Z
-###                             REGRESION LINEAL CON GRAFICOS
-def RegLineal(A,B,C,D,stringAB,stringCD,title,xlab,ylab):
-    plt.figure(figsize=(5,4))
-    plt.xlabel(xlab)
-    plt.ylabel(ylab)
-    plt.title(title)
-    xx=np.linspace(0,100,500)
-    #scatter de respuestas iniciales vs finales cuando se manipula la respuesta inicial
-    plt.scatter(A,B, label=stringAB, s=2, color='red', alpha=0.8)
-    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-    slopeAB, interceptAB, r_value, p_value, std_errAB=lr(A,B)
-    plt.plot(xx,slopeAB*xx+interceptAB, color='red', alpha=0.8)
-    #scatter de respuestas iniciales vs finales cuando NO se manipula la respuesta inicial
-    plt.scatter(C,D, label=stringCD, s=2, color='green', alpha=0.8)
-    #regresion lineal utilizando cuadrados minimos para hallar los parametros de la recta
-    slopeCD, interceptCD, r_valueNM, p_valueNM, std_errCD=lr(C,D)
-    plt.plot(xx,slopeCD*xx+interceptCD, color='green', alpha=0.8)
-    plt.legend(loc='upper left')
-    plt.tight_layout()
-    return slopeAB, interceptAB, std_errAB, slopeCD, interceptCD, std_errCD
-###                         TEST CHICUADRADO CON GRAFICO
-def ChiCuadrado(A,B,C,D,stringAB,stringCD, slopeAB, interceptAB, slopeCD, interceptCD, title):
-    plt.figure(figsize=(5,4))
-    plt.title(title)
-    yAB = slopeAB * A + interceptAB
-    TAB = np.sum((B - yAB)**2/yAB) #estadistico
-    yCD= slopeCD * C + interceptCD
-    TCD= np.sum((D - yCD)**2/yCD) #estadistico
-    df=len(B)-1
-    def chi2Acumulada(X):
-        return chi2.cdf(X,df)
-    x = np.linspace(df-50*np.sqrt(df),df+50*np.sqrt(df),100)
-    plt.plot(x, chi2.pdf(x, df),
-       'r-', lw=2, alpha=0.6)
-    plt.vlines(TAB,0,max(chi2.pdf(x, df)), color='red', label = stringAB + ' %d' %TAB)
-    plt.vlines(TCD,0,max(chi2.pdf(x, df)),color='green', label = stringCD + ' %d' %TCD)
-    pvAB=1-chi2.cdf(TAB,df) #pvalor para AB
-    pvCD=1-chi2.cdf(TCD,df) #pvalor para CD
-    plt.legend(loc='upper left')
-    plt.tight_layout()
-    return pvAB, TAB, pvCD, TCD
-###                                 TEST Z
-def testZ(slopeAB, std_errAB, slopeCD, std_errCD, title):
-    plt.figure(figsize=(5,4))
-    plt.title(title)
-    sigma=np.sqrt(std_errAB**2+std_errCD**2)
-    x = np.linspace(-10*sigma, 10*sigma, 1000)
-    #defino estas dos para que sea menos feo abajo
-    def gauss(X):
-        g = norm.pdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
-        return g
-    def gaussAcumulada(X):
-        gAc = norm.cdf(X,0,np.sqrt(std_errAB**2+std_errCD**2))
-        return gAc
-    #dibujo la distribucion del estadistico
-    plt.plot(x, gauss(x),
-           'r-', lw=2, alpha=0.6, label='gaussiana')
-    U=(slopeCD-slopeAB)/np.sqrt(std_errAB**2+std_errCD**2) #estadistico
-    plt.vlines(U,0,max(gauss(x)), color='blue') #muestro el estadistico en el dibujo
-    if U > 0:
-        pv=1-(2*(gaussAcumulada(U)-gaussAcumulada(0))) #pvalor para U
-        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
-        xx=np.linspace(U,x[-1],15)
-        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
-    else:
-        pv=1-(2*(gaussAcumulada(0)-gaussAcumulada(U))) #pvalor para U
-        #dibujo el area que va a ser la mitad del p-valor por ser a dos colas
-        xx=np.linspace(x[1],U,15)
-        plt.fill_between(xx, 0, gauss(xx),color='r', alpha=0.4)
-    patch_pv = mpatches.Patch(color='blue', label=r'el pvalor es %f' %(pv), alpha=0.4)
-    patch_area = mpatches.Patch(color='red', label=r'el area bajo la curva es %f' %(pv/2), alpha=0.4)
-    plt.legend(handles=[patch_pv, patch_area], loc='upper left')
-    plt.tight_layout()
-    return pv, U
 #%%                             All topics
 #regresion lineal
 slope, intercept, std_err, slopeNM, interceptNM, std_errNM = RegLineal(Ti, Tf, TNMi, TNMf, 
