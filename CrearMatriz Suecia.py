@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Jul  8 12:40:05 2018
-
 @author: Milton
 """
 #%%
@@ -35,13 +34,10 @@ for i in range(2): #Dentro de Range hay que poner el número de matrices que ten
         #agregamos 2 a los forks de ww2 para que las preguntas de ww1 sean
         #fork 9 y 10 y las de ww2 sean 11 y 12.
         df['fork'] += 2
-        """
+        """ Necesito que dejemos bien claro esto que no me esta saliendo redactar y no quiero mentir(lucas)
         En ww1 las qId asociadas a A1, A2, B1 y B2 son 19, 20, 21 y 22
-        En ww2 las qId asociadas a A1, A2, B1 y B2 son originalmente 23, 39, 40 y 41, a continuacion 
-        las cambiamos para dejar ww1 y ww2 con los mismos codigos de preguntas
-        Aclaracion: cuando decimos A1, A2 etc. nos referimos a las preguntas en si y no a la posicion que ocupan
-        Lo que hacemos a continuacion es hacer que en el dataframe que es append de las dos matrices
-        las preguntas que en ww1 son A1, A2, B1, B2 tengan el mismo qId en toda la matriz.
+        CREO QUE en ww2 las qId asociadas a A1, A2, B1 y B2 son 23, 39, 40 y 41
+        ...
         """
 
         #los que en ww2 tienen qId 19,20,21,22 los cambio por uno arbitrario
@@ -63,7 +59,7 @@ for i in range(2): #Dentro de Range hay que poner el número de matrices que ten
         df.questionId[df.questionId == 390] = 39
         df.questionId[df.questionId == 400] = 40
         df.questionId[df.questionId == 410] = 41
-        #appendeamos este df abajo del de ww1
+        #appendeamos este df al lado del de ww1
 
         frames.append(df)
     print(i)
@@ -89,21 +85,18 @@ un string como estaba antes
 #        ans[j] -= 1
 #
 #df_N.ValorRespondido = ans
+
 """    
 df_N.ValorRespondido nos muestra la columna asociada a esta variable.
-
 df_N.ValorRespondido[CONDICION] nos muestra los valores de la columna asociada
 que cumplen con la condicion que se le pida.
-
 df_N.ValorRespondido[CONDICION] -= 1 agarra los valores que nos muestra y les resta 1.
-
-PREGUNTA:
+PREGUNTA: POR QUE HACEMOS ESTO?
 la pregunta 31 es "¿que tan seguro es que votes por ese partido?" y le decimos que si
 esa es la pregunta y la persona respondio algo mayor a 3, hay que restarle 1 a esa 
-respuesta. Esto es porque las opciones 3 y 4 son parecidas, asi que las consideramos la misma opcion
-Tenemos que revisar si esto ya esta editado en el excel o si esta linea es necesaria
+respuesta
 """
-#df_N.ValorRespondido[(df_N.questionId == 31) & (df_N.ValorRespondido > 3)] -=  1 QUEDA PENDIENTE VER SI ESTA LINEA ES NECESARIA
+df_N.ValorRespondido[(df_N.questionId == 31) & (df_N.ValorRespondido > 3)] -=  1
 #isistance se fija que el primer argumento sea de la clase o tipo del segundo argumento
 #esto es un CONTROL de que los formatos esten bien
 df_N = df_N[[isinstance(x,int) for x in df_N.user_id]]
@@ -113,7 +106,7 @@ df_N = df_N[[isinstance(x,str) for x in df_N.Pais]]
 #en futuras versiones PONER EN COMENTARIOS Y SACAR DE ACA
 df_N = df_N[[isinstance(x,pd.Timestamp) for x in df_N.creado_el]]
 #del x
-df_N.sort_values(by = 'user_id', kind = 'mergesort', inplace = True) #me parece que esto se cumple solo
+df_N.sort_values(by = 'user_id', kind = 'mergesort') #me parece que esto se cumple solo
 #%%
 FechaI = pd.Timestamp(2018,9,5,12,30,0) #fecha de inicio y finalizacion del experimento
 #FechaF = dt.datetime(2018,6,17,8,0,0)
@@ -125,19 +118,18 @@ df_N = df_N [CONDICION] nos elimina las filas que NO cumplan con(nos deja las fi
     df_N.creado_el > FechaI si la respuesta es anterior a esta fecha hay que tirarlo
     df_N.Pais == 'Sweden' si el pais no es suecia hay que tirarlo
     
-luego de este filtro nos queda el dataframe sin datos que debieran ser omitidos por motivos
+luego de este filtro nos queda el data frame sin datos que debieran ser omitidos por motivos
 preestablecidos, usuarios de prueba, viejos o de otros paises.
 """
 df_N = df_N[(df_N['OmitirDatos?'] != 1) & (df_N.EsUsuarioDePrueba != 1) & (df_N.creado_el > FechaI) & (df_N.Pais == 'Sweden')] 
-#CL = [] #Conservador o Liberal
-Pol = [] #Que tan polarizado esta el usuario
+CL = [] #CREO QUE Nivel de confianza promedio que presento un dado usuario
+Pol = [] #CREO QUE Que tan polarizado esta el usuario
 
 """ FILTRO
 df_N.user_id.unique() es un array que se queda con los valores de
 la columna user_id pero elimina los repetidos,
 printeando df_N.user_id y df_N.user_id.unique() se entiende mejor.
-
-En el for lo primero es revisar que los usuarios no hayan contestado
+CREO QUE lo primero es revisar que los usuarios no hayan contestado
 dos veces la misma pregunta, esto se revisa en las lineas:
 -para las preguntas
 df_N[(df_N.user_id == i) & (df_N.Es_Repregunta == 0)] = df_N[(df_N.user_id == i) & (df_N.Es_Repregunta == 0)].drop_duplicates('questionId')
@@ -145,14 +137,12 @@ df_N[(df_N.user_id == i) & (df_N.Es_Repregunta == 0)] = df_N[(df_N.user_id == i)
 df_N[(df_N.user_id == i) & (df_N.Es_Repregunta == 1)] = df_N[(df_N.user_id == i) & (df_N.Es_Repregunta == 1)].drop_duplicates('questionId')
 donde se realiza esta distincion porque sino ya existirian repreguntas que, 
 en principio, no queremos eliminar
-
-df_N = df_N[~df_N.user_id.isna()] elimina la fila que tiene nan en user_id,
-aparecio el nan por el drop duplicates de la linea anterior
-
-En
+PREGUNTA: df_N = df_N[~df_N.user_id.isna()] elimina la fila que tiene nan en user_id
+no seria mejor eliminar al usuario directamente?
+AH, ME PARECE que en
 if df_N[df_N.user_id == i].shape != (24,16):
     df_N = df_N[df_N.user_id != i]
-Se eliminan a las personas que respondieron de mas o de menos y que desconocemos el por que.
+se hace eso, ya que las que se les borro, por ej, 1 fila repetida tienen shape (23,16)
 """
 
 for i in df_N.user_id.unique():
@@ -166,14 +156,20 @@ for i in df_N.user_id.unique():
         df_N = df_N[df_N.user_id != i]
     
     else:
-        #CL.append((np.mean(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.TipoDePregunta == 1) & (df_N.user_id == i)]) - np.mean(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.TipoDePregunta == 2) & (df_N.user_id == i)]) + 100)/2)
+        CL.append((np.mean(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.TipoDePregunta == 1) & (df_N.user_id == i)]) - np.mean(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.TipoDePregunta == 2) & (df_N.user_id == i)]) + 100)/2)
         #Pol.append(np.mean(2*abs(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.user_id == i)])))
         #no estoy seguro de que es pol pero no creo que tenga que tener los tipos de pregunta 0 para promediar con nada
         #tampoco se para que esta el 2*abs
         Pol.append(np.mean(df_N.ValorRespondido[(df_N.Es_Repregunta == 0) & (df_N.user_id == i) & (df_N.TipoDePregunta != 0)]))
 
-df_users = pd.DataFrame({"Pol":Pol})
+df_users = pd.DataFrame({"CL": CL , "Pol":Pol})
 df_users.index = df_N.user_id.unique()
+#%% TIRA LAS REPREGUNTAS
+"""
+Bueno parece haber una necesidad de decirle al amigo df_N que tire todas las repreguntas,
+esto charlemoslo de todas maneras
+"""
+df_N = df_N[df_N.Es_Repregunta == 0]
 #%%
 
 #Meto 0s donde deberían haber 0s y hay nulos
@@ -191,10 +187,17 @@ del df_N['EsUsuarioDePrueba']
 df_N.ValorRespondido[df_N.questionId == 19] = -df_N.ValorRespondido[df_N.questionId == 19] + 100
 df_N.ValorRespondido[df_N.questionId == 23] = -df_N.ValorRespondido[df_N.questionId == 23] + 100
 
+
+#%% GUARDA LA MATRIZ EN PICKLE
 #Guarda la matriz lista para el análisis, y un vector Us que es una lista de los id de usuarios que existen
 #DECISIÓN IMPORTANTE: Dejo solo las primeras 4 repreguntas de cada usuario
 #Cambie los nans que eran ceros por ceros
 
 #df_Base.to_pickle('BaseSW', protocol = 2)
-df_N.to_pickle('MatrizTotal', protocol = 2)
-df_users.to_pickle('MatrizUsuarios', protocol = 2)   
+#df_N.to_pickle('MatrizTotal', protocol = 2)
+#df_users.to_pickle('MatrizUsuarios', protocol = 2)  
+
+#%% GUARDA LA MATRIZ EN CSV
+
+df_N.to_csv('MatrizTotalCSV.csv')
+df_users.to_csv('MatrizUsuariosCSV.csv')  
