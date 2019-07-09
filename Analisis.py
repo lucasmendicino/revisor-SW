@@ -1,20 +1,26 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Oct 12 19:25:27 2018
-
 @author: Milt
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy.stats import norm
 #%% Código para mostrarle a los Suecos en Suecia
 #Las cosas importantes son: mean(A1,A2), mean(B1,B2), mean(A3, A4), mean(B3,B4), DR, Fork, usrID,   
 #Scatter mean(1,2) vs mean(3,4) uno para los manipulados y uno para los no manipulados, linealizar y ver si la pendiendte es igual o distinta
 
 #%%                     ESTO SE CORRE SI SE QUIERE USAR LA MATRIZ NUEVA
-#%% Carga la matriz(la nueva hecha con pandas)
-Datosdf = np.load('MatrizTotal')
+#%% 
+
+#%%Carga la matriz(la nueva hecha con pandas) PICKLE
+#Datosdf = np.load('MatrizTotal', allow_pickle=True)
+#%%Carga la matriz(la nueva hecha con pandas) CSV
+Datosdf = np.genfromtxt('MatrizTotalCSV.csv', delimiter=',')
+#%%
+
 #reordeno las columnas del data frame para que a la hora de mirar columnas
 #tengan los mismo numeritos que lo que veniamos usando con la otra matriz
 Datosdf = Datosdf[['Pais','user_id','timer','fork','questionId',
@@ -163,7 +169,6 @@ y Bi cuando el Fork es 10 y 12, es decir cuando las respuestas iniciales
 de cada fork van a ser manipuladas.
 Tf guarda la respuesta a las preguntas finales asociadas al mismo tema 
 en estos casos.
-
 -TNMi guarda el promedio de las respuestas inciales Ai cuando el Fork
 es 10 y 12 y Bi cuando el Fork es 9 y 11, es decir cuando las respuestas
 iniciales de cada fork NO van a ser manipuladas.
@@ -224,6 +229,127 @@ slopeNM, interceptNM, r_valueNM, p_valueNM, std_errNM=lr(TNMi,TNMf)
 plt.plot(xx,slopeNM*xx+interceptNM, color='green', alpha=0.8)
 
 plt.legend()
+
+#%%                                     TEST DE RUNS
+
+##Aviso!!! Se debe correr este codigo con la matriz sin las repreguntas 
+#(en CrearMatriz se tiene esa opcion, sino se debe filtrar por repregunta)
+
+#calculo el estadistico de runs para dos conjuntos A y B
+def EstRuns(A,B):
+    #los redefino para etiquetar cada elemento con el conjunto del cual provienen
+        #A es el conjunto asociado al 0
+    labelA=np.reshape(A,(len(A),1))
+    labelA=np.insert(labelA,1,0,axis=1)
+        #B es el conjunto asociado al 1
+    labelB=np.reshape(B,(len(B),1))
+    labelB=np.insert(labelB,1,1,axis=1)
+    #creo un conjunto con ambos para sortearlo
+    conjunto=np.append(labelA,labelB,axis=0)
+    conjunto=conjunto[conjunto[:,0].argsort()]
+    #cuento la cantidad de runs (cambios de conjunto de A a B y viceversa)
+    runs=0
+    for i in range(len(conjunto)):
+        if i==0 or conjunto[i][1]==conjunto[i-1][1]:
+            pass
+        else:
+            runs+=1
+    return runs
+
+#defino el calculo del p-valor con una aproximacion gaussiana (aproxima la distribucion del estadistico como una normal
+#de esperanza y varianza dadas por las formulas del estadistico). La funcion tambien plotea, tomando un título
+def PvalRuns(A,B,runs,title=None):
+    N=len(A)
+    M=len(B) 
+    #calculamos la esperanza y la varianza de la distribucion (usando las formulas del test runs)
+    mu=2*N*M/(N+M)+1
+    sigma=(2*N*M*(2*N*M-N-M)/((N+M)**2*(N+M-1)))**(0.5)
+    #obtenemos la gaussiana en un intervalo de ancho 60sigmas alrededor de la esperanza
+    dom=np.linspace(mu-30*sigma,mu+30*sigma,10000)
+    gauss=norm.pdf(dom,mu,sigma)
+    #calculamos el p-valor
+    pValue=0
+    i=0
+    while dom[i]<=runs:
+        pValue+=gauss[i]
+        i+=1
+    norma=pValue
+    for j in range(i+1,len(dom),1):
+        norma+=gauss[j]
+    #ploteamos
+    if title:
+        plt.plot(dom, gauss, label='Distribución Normal')
+        plt.axvline(x=runs,linestyle='--', color='r', label='Estadístico de Runs: '+str(runs))
+        pValue/=norma
+        plt.plot([], [], ' ', label='P-valor: '+str(np.format_float_scientific(pValue, precision=2)))
+        plt.xlabel('Estadísticos de Runs')
+        plt.ylabel('Probabilidad')
+        plt.title(title)
+        plt.legend()
+        plt.savefig(title+'.png', dpi=150)
+        plt.show()
+    else:
+        pass
+    return pValue
+
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios manipulados que hayan contestado 
+#con un promedio de agreement mayor a 50 EN SU PRIMERA RESPUESTA 
+MMi=np.array([])
+MMf=np.array([])
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios no manipulados que hayan contestado 
+#con un promedio de agreement mayor a 50 EN SU PRIMERA RESPUESTA 
+NMMi=np.array([])
+NMMf=np.array([])
+
+
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios manipulados que hayan contestado 
+#con un promedio de agreement menor a 50 EN SU PRIMERA RESPUESTA 
+Mmi=np.array([])
+Mmf=np.array([])
+#guarda las respuestas iniciales y finales (i y f respectivamente) de los usuarios no manipulados que hayan contestado 
+#con un promedio de agreement menor a 50 EN SU PRIMERA RESPUESTA 
+NMmi=np.array([])
+NMmf=np.array([])
+
+#recorro todas las respuestas manipuladas de todos los usuarios
+
+##PREGUNTAR: lo hace hasta 1981 porque despues de eso me tira error de index (revisar, porque el total es 3024)
+for i in range(len(A1)):
+    #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50 (manipulados)
+    if Ti[i]>=50:
+        MMi = np.append(MMi, Ti[i])
+        MMf = np.append(MMf, Tf[i])
+    #guardo aquellos cuyo agreement inicial haya sido menor a 50
+    else:
+        Mmi = np.append(Mmi, Ti[i])
+        Mmf = np.append(Mmf, Tf[i])
+    #guardo aquellos cuyo agreement inicial haya sido mayor o igual a 50 (no manipulados)
+    if TNMi[i]>=50:
+        NMMi = np.append(MMi, TNMi[i])
+        NMMf = np.append(MMf, TNMf[i])
+    #guardo aquellos cuyo agreement inicial haya sido menor a 50
+    else:
+        NMmi = np.append(Mmi, TNMi[i])
+        NMmf = np.append(Mmf, TNMf[i])
+ 
+    
+
+#estadistico y p-valor del grupo de mayores de 50
+runsM=EstRuns(MMi,MMf)
+pValM=PvalRuns(MMi,MMf,runsM,'Manipulados con agreement inicial mayor a 50')
+
+#estadistico y p-valor del grupo de menores de 50
+runsm=EstRuns(Mmi,Mmf)
+pValm=PvalRuns(Mmi,Mmf,runsm,'Manipulados con agreement inicial menor a 50')
+
+#estadistico y p-valor del grupo de mayores de 50
+runsNM=EstRuns(NMMi,NMMf)
+pValNM=PvalRuns(NMMi,NMMf,runsNM,'No manipulados con agreement inicial mayor a 50')
+
+#estadistico y p-valor del grupo de menores de 50
+runsNm=EstRuns(NMmi,NMmf)
+pValNm=PvalRuns(NMmi,NMmf,runsNm,'No manipulados con agreement inicial menor a 50')
+
 #%%                                     LINEALIDAD
 """
 Para evaluar la linealidad de los datos y de cierta forma la confianza
@@ -231,9 +357,7 @@ que le podemos tener a esa recta que trazamos en la regresion
 realizo primero un test chi-cuadrado, la distribucion tiene k-1 grados de libertad.
 El estadistico T da varios ordenes de magnitud mayor a la media de la distribucion
 por lo que rechazamos H0: los datos se ven bien representados por esta recta.
-
 Da un pvalor del orden de a la menos 17
-
 Comentario: ante el debate de si chi2 o t student voy a decir (lucas) que el p-valor
 es re 0 igual. Ni lo pido aca porque igual esta parte habria que borrarla en principio
 pero la funcion stats.chisquare lo tira solo.
@@ -262,7 +386,6 @@ Como asumimos distribuciones gaussianas entonces la resta de gaussianas es gauss
 con la media que es la resta y la varianza siendo la suma de las varianzas.
 Por lo tanto si son iguales la distribucion del estadistico bajo H0
 tiene varianza std_err**2+std_errNM**2
-
 Siendo riguroso estoy considerando a los valores de slope y slopeNM como el promedio
 de cada distribucion que bueno al asumir gaussianidad es compatible
 """
